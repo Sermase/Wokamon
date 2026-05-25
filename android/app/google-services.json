@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "155455530301",
+    "project_id": "wokamon-cd2ec",
+    "storage_bucket": "wokamon-cd2ec.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:155455530301:android:569889456794a35ae31154",
+        "android_client_info": {
+          "package_name": "app.wokamon.web"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoM0ImHX-qHHVUmdviAJ0tWOlJmKc2ijc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

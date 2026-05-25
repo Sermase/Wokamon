@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥚</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- SEO Optimization -->
+    <title>Wokamon Evolucionado - Prototipo de Juego Físico-Virtual</title>
+    <meta name="description" content="Tus pasos de la vida real se convierten en energía para criar, alimentar y eclosionar criaturas genéticas híbridas. ¡Prototipo con rituales NFC y genética cruzada!" />
+    <meta name="author" content="Antigravity Team" />
+    
+    <!-- Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Background Nebula Glowing Vectors -->
+    <div class="nebula-bg glow-cyan"></div>
+    <div class="nebula-bg glow-pink"></div>
+    <div class="nebula-bg glow-orange"></div>
+
+    <div id="app">
+      <!-- Main Premium App Header -->
+      <header class="app-header glass-panel">
+        <div class="header-logo-section">
+          <div class="header-icon">🧬</div>
+          <div>
+            <h1 class="app-title">Wokamon <span class="accent-title">Evolucionado</span></h1>
+            <p class="app-subtitle">Camina • Incuba • Transfiere • Evoluciona</p>
+            <p class="app-username" id="header-username-display" style="font-size: 0.72rem; font-weight: 700; color: var(--primary-accent); margin-top: 0.25rem; display: none;"></p>
+          </div>
+        </div>
+
+        <div class="global-stats-header">
+          <div class="header-stat" id="header-stat-steps">
+            <span class="label">Pasos Hoy</span>
+            <span class="val">0</span>
+          </div>
+          <div class="header-stat" id="header-stat-energy">
+            <span class="label">Energía (EP)</span>
+            <span class="val">50</span>
+          </div>
+          <div class="header-stat" id="header-stat-crystals">
+            <span class="label">Cristales</span>
+            <span class="val">10</span>
+          </div>
+          <div class="header-premium-indicator free" id="header-premium-indicator">
+            FREE
+          </div>
+        </div>
+      </header>
+
+      <!-- App Tab Nav Bar (Mobile layout style) -->
+      <nav class="app-nav glass-panel" id="main-navigation">
+        <button class="nav-tab active-tab" id="nav-tab-activity" data-target="panel-activity">
+          <span class="nav-icon">🐾</span>
+          <span class="nav-label">Actividad y Criadero</span>
+        </button>
+        <button class="nav-tab" id="nav-tab-mating" data-target="panel-mating">
+          <span class="nav-icon">⚡</span>
+          <span class="nav-label">Ritual NFC ("La Chispa")</span>
+        </button>
+        <button class="nav-tab" id="nav-tab-lab" data-target="panel-lab">
+          <span class="nav-icon">🥚</span>
+          <span class="nav-label">Laboratorio e Incubadora</span>
+        </button>
+      </nav>
+
+      <!-- Main Dashboards Panels Layout -->
+      <main class="app-main-content">
+        <!-- Panel 1: Activity & Nursery -->
+        <section class="panel-section active-panel" id="panel-activity">
+          <div class="dashboard-stack">
+            <!-- Step Simulator Hook -->
+            <div id="step-simulator-container"></div>
+            <!-- Wokamons Stable Hook -->
+            <div id="stable-manager-container"></div>
+          </div>
+        </section>
+
+        <!-- Panel 2: NFC Breeding Ritual -->
+        <section class="panel-section" id="panel-mating">
+          <!-- NFC Ritual Hook -->
+          <div id="mating-ritual-container"></div>
+        </section>
+
+        <!-- Panel 3: genetics laboratory egg painter -->
+        <section class="panel-section" id="panel-lab">
+          <!-- Egg Canvas & breeding Hatch Hook -->
+          <div id="genetics-lab-container"></div>
+        </section>
+      </main>
+
+      <!-- Floating notification trigger for ticks/activity -->
+      <div id="toast-notification-root"></div>
+
+      <!-- App Footer / Debug tools -->
+      <footer class="app-footer text-center">
+        <p>Wokamon Evolucionado v1.0.0 © 2026. Diseñado con psicología de bucle gamificado.</p>
+        <div class="debug-actions">
+          <button class="btn btn-danger-outline btn-xs" id="btn-debug-reset">Reestablecer Partida</button>
+          <span class="time-scale-label">⏳ Reloj de tiempo acelerado (1 día = 30 seg)</span>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Script Loading -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
