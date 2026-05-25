@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Wokamon</string>
     <string name="title_activity_main">Wokamon</string>
-    <string name="package_name">com.wokamon.game</string>
-    <string name="custom_url_scheme">com.wokamon.game</string>
+    <string name="package_name">app.wokamon.web</string>
+    <string name="custom_url_scheme">app.wokamon.web</string>
 </resources>

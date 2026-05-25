@@ -1,5 +1,12 @@
 {
-  "appId": "com.wokamon.game",
+  "appId": "app.wokamon.web",
   "appName": "Wokamon",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "FirebaseAuthentication": {
+      "authDomain": "wokamon-cd2ec.firebaseapp.com",
+      "skipNativeAuth": true,
+      "providers": ["google.com", "playgames.google.com"]
+    }
+  }
 }

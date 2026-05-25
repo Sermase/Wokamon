@@ -1,7 +1,16 @@
 // Wokamon Evolucionado - Global State Management (Mendelian Genetics & Firebase Cloud Edition)
 
 import { auth, db } from './firebase.js';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as fbSignOut, onAuthStateChanged } from 'firebase/auth';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import {
+  GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithCredential,
+  signInWithEmailAndPassword,
+  signOut as fbSignOut,
+  updateProfile
+} from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 
 
@@ -15,6 +24,35 @@ const WOKAMON_NAMES = [
   'Woki', 'Bambam', 'Puff', 'Chispas', 'Gordo', 'Zipo', 'Kiko', 'Tito', 
   'Mimo', 'Nono', 'Lulu', 'Jojo', 'Dodo', 'Fifi', 'Gugu', 'Rulu', 'Pip'
 ];
+
+function normalizeAuthEmail(identifier) {
+  const value = identifier.trim().toLowerCase();
+  return value.includes('@') ? value : `${value}@wokamon.com`;
+}
+
+function getFriendlyAuthError(error, fallback = 'No se pudo completar la autenticación') {
+  const code = error?.code || '';
+  if (code.includes('email-already-in-use')) return 'Ese email ya tiene un criadero.';
+  if (code.includes('invalid-email')) return 'El email no tiene un formato válido.';
+  if (code.includes('weak-password')) return 'La contraseña debe tener al menos 6 caracteres.';
+  if (code.includes('user-not-found') || code.includes('wrong-password') || code.includes('invalid-credential')) {
+    return 'Email/usuario o contraseña incorrectos.';
+  }
+  if (code.includes('popup-closed-by-user') || code.includes('canceled') || code.includes('cancelled')) {
+    return 'Inicio de sesión cancelado.';
+  }
+  return fallback;
+}
+
+function getAuthDisplayName(firebaseUser) {
+  if (!firebaseUser) return null;
+  if (firebaseUser.displayName) return firebaseUser.displayName;
+  if (firebaseUser.email?.endsWith('@wokamon.com')) {
+    const username = firebaseUser.email.replace('@wokamon.com', '');
+    return username.charAt(0).toUpperCase() + username.slice(1);
+  }
+  return firebaseUser.email || 'Jugador';
+}
 
 export function getRandomName() {
   return WOKAMON_NAMES[Math.floor(Math.random() * WOKAMON_NAMES.length)];
@@ -230,15 +268,11 @@ const defaultState = {
 
 class GameState {
   get currentUser() {
-    if (auth.currentUser && auth.currentUser.email) {
-      const email = auth.currentUser.email;
-      if (email.endsWith("@wokamon.com")) {
-        const username = email.replace("@wokamon.com", "");
-        return username.charAt(0).toUpperCase() + username.slice(1);
-      }
-      return email;
-    }
-    return null;
+    return getAuthDisplayName(auth.currentUser);
+  }
+
+  get currentUserPhoto() {
+    return auth.currentUser?.photoURL || null;
   }
 
   constructor() {
@@ -259,6 +293,7 @@ class GameState {
         this.isLoading = true;
         this.activeUser = firebaseUser.uid;
         await this.loadUserData(firebaseUser.uid);
+        await this.saveUserProfile(firebaseUser);
       } else {
         this.activeUser = null;
         this.resetLocalInMemory();
@@ -294,7 +329,8 @@ class GameState {
           user: JSON.parse(JSON.stringify(defaultState.user)),
           matingState: JSON.parse(JSON.stringify(defaultState.matingState)),
           shop: JSON.parse(JSON.stringify(defaultState.shop)),
-          collection: []
+          collection: [],
+          profile: {}
         };
         await setDoc(userRef, initialUserDoc);
         this.userStats = initialUserDoc.user;
@@ -389,37 +425,112 @@ class GameState {
 
   async signUp(username, password) {
     if (!username || !password) return { success: false, message: 'Falta usuario o contraseña' };
-    const email = username.trim().toLowerCase() + "@wokamon.com";
+    const email = normalizeAuthEmail(username);
+    const displayName = username.includes('@') ? username.split('@')[0] : username.trim();
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      this.logActivity('WALK', `✨ ¡Bienvenido a Wokamon, ${username}! Tu criadero biológico ha sido creado.`);
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(credential.user, { displayName });
+      await this.saveUserProfile(credential.user);
+      this.logActivity('WALK', `✨ ¡Bienvenido a Wokamon, ${displayName}! Tu criadero biológico ha sido creado.`);
       return { success: true };
     } catch (error) {
-      let message = 'Error en el registro';
-      if (error.code === 'auth/email-already-in-use') {
-        message = 'El usuario ya existe';
-      }
-      return { success: false, message };
+      return { success: false, message: getFriendlyAuthError(error, 'Error en el registro') };
     }
   }
 
   async signIn(username, password) {
     if (!username || !password) return { success: false, message: 'Falta usuario o contraseña' };
-    const email = username.trim().toLowerCase() + "@wokamon.com";
+    const email = normalizeAuthEmail(username);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      this.logActivity('WALK', `🔑 Sesión iniciada como ${username}.`);
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      await this.saveUserProfile(credential.user);
+      this.logActivity('WALK', `🔑 Sesión iniciada como ${getAuthDisplayName(credential.user)}.`);
       return { success: true };
     } catch (error) {
-      return { success: false, message: 'Usuario o contraseña incorrectos' };
+      return { success: false, message: getFriendlyAuthError(error, 'Usuario o contraseña incorrectos') };
+    }
+  }
+
+  async signInWithGoogle() {
+    try {
+      const result = await FirebaseAuthentication.signInWithGoogle({
+        skipNativeAuth: true,
+        scopes: ['email', 'profile']
+      });
+
+      if (!auth.currentUser && result.credential) {
+        const credential = GoogleAuthProvider.credential(
+          result.credential.idToken || null,
+          result.credential.accessToken || null
+        );
+        await signInWithCredential(auth, credential);
+      }
+
+      const signedUser = auth.currentUser;
+      if (signedUser) {
+        await this.saveUserProfile(signedUser);
+        this.logActivity('WALK', `🔑 Sesión iniciada con Google como ${getAuthDisplayName(signedUser)}.`);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Google sign-in failed:', error);
+      return { success: false, message: getFriendlyAuthError(error, 'No se pudo iniciar sesión con Google') };
+    }
+  }
+
+  async signInWithPlayGames() {
+    try {
+      const result = await FirebaseAuthentication.signInWithPlayGames({
+        skipNativeAuth: true,
+        scopes: ['games_lite']
+      });
+
+      if (!auth.currentUser && result.credential) {
+        const credential = GoogleAuthProvider.credential(
+          result.credential.idToken || null,
+          result.credential.accessToken || null
+        );
+        await signInWithCredential(auth, credential);
+      }
+
+      const signedUser = auth.currentUser;
+      if (signedUser) {
+        await this.saveUserProfile(signedUser);
+        this.logActivity('WALK', `🎮 Sesión iniciada con Google Play Games.`);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Play Games sign-in failed:', error);
+      return { success: false, message: getFriendlyAuthError(error, 'Google Play Games aún no está disponible en este dispositivo') };
     }
   }
 
   async signOut() {
     try {
+      await FirebaseAuthentication.signOut().catch(() => {});
       await fbSignOut(auth);
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  async saveUserProfile(firebaseUser) {
+    if (!firebaseUser) return;
+    try {
+      await setDoc(doc(db, 'users', firebaseUser.uid), {
+        profile: {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email || null,
+          displayName: getAuthDisplayName(firebaseUser),
+          photoUrl: firebaseUser.photoURL || null,
+          providerIds: firebaseUser.providerData?.map(provider => provider.providerId) || [],
+          lastLoginAt: Date.now()
+        }
+      }, { merge: true });
+    } catch (error) {
+      console.error('Error saving auth profile:', error);
     }
   }
 

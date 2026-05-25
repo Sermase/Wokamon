@@ -1,4 +1,4 @@
-package com.wokamon.game;
+package app.wokamon.web;
 
 import com.getcapacitor.BridgeActivity;
 

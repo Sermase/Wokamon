@@ -5,6 +5,7 @@ import { StepSimulator } from './components/StepSimulator.js';
 import { StableManager } from './components/StableManager.js';
 import { MatingRitual } from './components/MatingRitual.js';
 import { GeneticsLab } from './components/GeneticsLab.js';
+import { Capacitor } from '@capacitor/core';
 
 // Import CSS (Vite automatically bundles this)
 import './style.css';
@@ -217,7 +218,10 @@ function updateHeaderStats(state) {
 
   if (usernameDisplay) {
     if (store.currentUser) {
-      usernameDisplay.innerHTML = `👤 Cuenta: <strong>${store.currentUser}</strong> <span id="btn-header-signout" style="color: #ff5252; cursor: pointer; margin-left: 0.75rem; text-decoration: underline; font-weight: 400;">[Salir]</span>`;
+      const avatar = store.currentUserPhoto
+        ? `<img src="${store.currentUserPhoto}" alt="" style="width: 18px; height: 18px; border-radius: 999px; vertical-align: middle; margin-right: 0.35rem;">`
+        : '👤 ';
+      usernameDisplay.innerHTML = `${avatar}Cuenta: <strong>${store.currentUser}</strong> <span id="btn-header-signout" style="color: #ff5252; cursor: pointer; margin-left: 0.75rem; text-decoration: underline; font-weight: 400;">[Salir]</span>`;
       usernameDisplay.style.display = 'block';
       
       const signOutBtn = usernameDisplay.querySelector('#btn-header-signout');
@@ -241,11 +245,22 @@ function createAuthOverlayDOM() {
   overlay.className = 'payment-overlay';
   overlay.style.zIndex = '3000';
   
+  const isAndroidNative = Capacitor.getPlatform() === 'android';
+
   overlay.innerHTML = `
     <div class="auth-panel glass-panel pad-lg text-center flex-center flex-col animate-slide-in" style="max-width: 380px; width: 90%; gap: 1.25rem; background: rgba(255, 255, 255, 0.95); border: 2px solid var(--primary-accent); box-shadow: 0 10px 40px rgba(0, 77, 64, 0.15);">
       <div class="header-logo" style="font-size: 3rem; margin-bottom: -0.25rem;">🧬</div>
       <h2 style="font-weight: 800; color: var(--text-white);">Wokamon Evolved</h2>
-      <p class="subtitle" style="font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--text-grey);">Crea o ingresa a tu criadero de genética mendeliana real.</p>
+      <p class="subtitle" style="font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--text-grey);">Crea o ingresa a tu criadero sincronizado en Firebase.</p>
+
+      <button class="btn btn-secondary" id="btn-auth-google" style="width: 100%; padding: 0.72rem; font-weight: 800; background: #fff; color: #243447; border: 1.5px solid rgba(27,42,74,0.15); box-shadow: 0 8px 18px rgba(27,42,74,0.08);">G Continuar con Google</button>
+      ${isAndroidNative ? `<button class="btn btn-secondary" id="btn-auth-playgames" style="width: 100%; padding: 0.62rem; font-weight: 700; background: rgba(76,175,80,0.12); color: #1b5e20; border: 1.5px solid rgba(76,175,80,0.25);">Continuar con Google Play Games</button>` : ''}
+
+      <div style="width: 100%; display: flex; align-items: center; gap: 0.6rem; color: var(--text-grey); font-size: 0.68rem; font-weight: 700;">
+        <span style="height: 1px; flex: 1; background: rgba(0, 131, 143, 0.18);"></span>
+        <span>o usa email</span>
+        <span style="height: 1px; flex: 1; background: rgba(0, 131, 143, 0.18);"></span>
+      </div>
       
       <div class="auth-tabs" style="display: flex; width: 100%; gap: 0.5rem; background: rgba(0, 131, 143, 0.05); padding: 0.25rem; border-radius: 8px; border: 1px solid rgba(0, 131, 143, 0.15);">
         <button class="btn btn-secondary btn-xs" id="auth-tab-signin" style="flex: 1; padding: 0.4rem; font-size: 0.75rem;">Iniciar Sesión</button>
@@ -254,13 +269,13 @@ function createAuthOverlayDOM() {
 
       <div class="auth-form flex-col" style="width: 100%; gap: 0.75rem; text-align: left;">
         <div class="input-group">
-          <label style="font-size: 0.65rem; font-weight: 700; color: var(--text-grey); display: block; margin-bottom: 0.25rem; letter-spacing: 0.5px;">NOMBRE DE USUARIO</label>
-          <input type="text" id="auth-username" placeholder="Ej: Juan_Gamer" style="width: 100%; background: rgba(255, 255, 255, 0.75); border: 1.5px solid rgba(0, 131, 143, 0.2); border-radius: 8px; color: var(--text-white); padding: 0.6rem; font-size: 0.8rem; outline: none; transition: all 0.25s;">
+          <label style="font-size: 0.65rem; font-weight: 700; color: var(--text-grey); display: block; margin-bottom: 0.25rem; letter-spacing: 0.5px;">EMAIL O USUARIO</label>
+          <input type="text" id="auth-username" placeholder="tu@email.com o Juan_Gamer" autocomplete="email" style="width: 100%; background: rgba(255, 255, 255, 0.75); border: 1.5px solid rgba(0, 131, 143, 0.2); border-radius: 8px; color: var(--text-white); padding: 0.6rem; font-size: 0.8rem; outline: none; transition: all 0.25s;">
         </div>
         
         <div class="input-group">
           <label style="font-size: 0.65rem; font-weight: 700; color: var(--text-grey); display: block; margin-bottom: 0.25rem; letter-spacing: 0.5px;">CONTRASEÑA</label>
-          <input type="password" id="auth-password" placeholder="••••••••" style="width: 100%; background: rgba(255, 255, 255, 0.75); border: 1.5px solid rgba(0, 131, 143, 0.2); border-radius: 8px; color: var(--text-white); padding: 0.6rem; font-size: 0.8rem; outline: none; transition: all 0.25s;">
+          <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" style="width: 100%; background: rgba(255, 255, 255, 0.75); border: 1.5px solid rgba(0, 131, 143, 0.2); border-radius: 8px; color: var(--text-white); padding: 0.6rem; font-size: 0.8rem; outline: none; transition: all 0.25s;">
         </div>
         
         <div class="error-msg" id="auth-error-msg" style="color: #ff5252; font-size: 0.7rem; font-weight: 600; display: none;"></div>
@@ -275,6 +290,8 @@ function createAuthOverlayDOM() {
   const signinTab = overlay.querySelector('#auth-tab-signin');
   const signupTab = overlay.querySelector('#auth-tab-signup');
   const submitBtn = overlay.querySelector('#btn-auth-submit');
+  const googleBtn = overlay.querySelector('#btn-auth-google');
+  const playGamesBtn = overlay.querySelector('#btn-auth-playgames');
   const errorMsg = overlay.querySelector('#auth-error-msg');
   
   let mode = 'signin';
@@ -319,6 +336,46 @@ function createAuthOverlayDOM() {
 
   // Initial styles
   updateTabStyles();
+
+  const runProviderSignIn = async (button, action, successLabel) => {
+    if (!button) return;
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Conectando con Firebase...';
+    submitBtn.disabled = true;
+    errorMsg.style.display = 'none';
+
+    try {
+      const res = await action();
+      if (res.success) {
+        overlay.remove();
+        showToastNotification(successLabel);
+      } else {
+        errorMsg.textContent = res.message;
+        errorMsg.style.display = 'block';
+        button.disabled = false;
+        submitBtn.disabled = false;
+        button.textContent = originalText;
+      }
+    } catch (err) {
+      console.error(err);
+      errorMsg.textContent = 'No se pudo conectar con el proveedor.';
+      errorMsg.style.display = 'block';
+      button.disabled = false;
+      submitBtn.disabled = false;
+      button.textContent = originalText;
+    }
+  };
+
+  googleBtn.addEventListener('click', () => {
+    runProviderSignIn(googleBtn, () => store.signInWithGoogle(), '✨ Criadero cargado con Google.');
+  });
+
+  if (playGamesBtn) {
+    playGamesBtn.addEventListener('click', () => {
+      runProviderSignIn(playGamesBtn, () => store.signInWithPlayGames(), '🎮 Criadero cargado con Google Play Games.');
+    });
+  }
 
   submitBtn.addEventListener('click', async () => {
     const username = overlay.querySelector('#auth-username').value.trim();
