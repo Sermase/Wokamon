@@ -1,4 +1,4 @@
-// Wokamon Evolucionado - Global State Management (Mendelian Genetics & Firebase Cloud Edition)
+﻿// Wokamon Evolucionado - Global State Management (Mendelian Genetics & Firebase Cloud Edition)
 
 import { auth, db } from './firebase.js';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
@@ -24,6 +24,11 @@ const WOKAMON_NAMES = [
   'Woki', 'Bambam', 'Puff', 'Chispas', 'Gordo', 'Zipo', 'Kiko', 'Tito', 
   'Mimo', 'Nono', 'Lulu', 'Jojo', 'Dodo', 'Fifi', 'Gugu', 'Rulu', 'Pip'
 ];
+
+const DAILY_STEP_LIMIT_FREE = 10000;
+const DAILY_STEPS_PER_WOKAMON = 5000;
+const BASE_LIFESPAN_DAYS = 30;
+const DAILY_CARE_CUTOFF_HOUR = 5;
 
 function normalizeAuthEmail(identifier) {
   const value = identifier.trim().toLowerCase();
@@ -54,8 +59,70 @@ function getAuthDisplayName(firebaseUser) {
   return firebaseUser.email || 'Jugador';
 }
 
+function getLocalCareCycleKey(date = new Date()) {
+  const cycleDate = new Date(date);
+  if (cycleDate.getHours() < DAILY_CARE_CUTOFF_HOUR) {
+    cycleDate.setDate(cycleDate.getDate() - 1);
+  }
+
+  const year = cycleDate.getFullYear();
+  const month = String(cycleDate.getMonth() + 1).padStart(2, '0');
+  const day = String(cycleDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getDaysBetweenCareKeys(previousKey, currentKey) {
+  const parseKey = (key) => {
+    const [year, month, day] = key.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const diffMs = parseKey(currentKey).getTime() - parseKey(previousKey).getTime();
+  return Math.max(0, Math.floor(diffMs / 86400000));
+}
+
 export function getRandomName() {
   return WOKAMON_NAMES[Math.floor(Math.random() * WOKAMON_NAMES.length)];
+}
+
+export const TRAIT_LABELS_ES = {
+  bodyType: 'Cuerpo',
+  ears: 'Orejas',
+  eyes: 'Ojos',
+  horns: 'Cuernos',
+  wings: 'Alas'
+};
+
+export const TRAIT_VALUE_LABELS_ES = {
+  round: 'redondo',
+  oval: 'ovalado',
+  squarish: 'cuadrado',
+  cloud: 'nube',
+  blob: 'gota',
+  teddy: 'de oso',
+  pointy: 'puntiagudas',
+  floppy: 'caidas',
+  long: 'largas',
+  fire: 'de fuego',
+  sparkle: 'brillantes',
+  sleepy: 'somnolientos',
+  normal: 'normales',
+  neon: 'de neon',
+  ram: 'de carnero',
+  small: 'pequenos',
+  none: 'sin rasgo',
+  angel: 'de angel',
+  dragon: 'de dragon'
+};
+
+export function getTraitLabel(trait) {
+  return TRAIT_LABELS_ES[trait] || trait;
+}
+
+export function getTraitValueLabel(value, trait = '') {
+  if (value === 'none' && trait === 'horns') return 'sin cuernos';
+  if (value === 'none' && trait === 'wings') return 'sin alas';
+  return TRAIT_VALUE_LABELS_ES[value] || value;
 }
 
 // ==========================================
@@ -73,7 +140,7 @@ export const ALLELES_DOMINANCE = {
   ears: {
     'T': { name: 'teddy', dominance: 3, label: 'Orejas de Oso (Dom. T)' },
     'p': { name: 'pointy', dominance: 1, label: 'Orejas Puntiagudas (Rec. p)' },
-    'f': { name: 'floppy', dominance: 1, label: 'Orejas Caídas (Rec. f)' },
+    'f': { name: 'floppy', dominance: 1, label: 'Orejas caídas (Rec. f)' },
     'l': { name: 'long', dominance: 1, label: 'Orejas Largas (Rec. l)' }
   },
   eyes: {
@@ -83,14 +150,14 @@ export const ALLELES_DOMINANCE = {
     'n': { name: 'normal', dominance: 1, label: 'Ojos Normales (Rec. n)' }
   },
   horns: {
-    'N': { name: 'neon', dominance: 4, label: 'Cuernos de Neón (Prem. Dom. N)' },
-    'M': { name: 'ram', dominance: 3, label: 'Cuernos de Carnero (Dom. M)' },
-    'A': { name: 'small', dominance: 2, label: 'Cuernos Pequeños (Dom. A)' },
+    'N': { name: 'neon', dominance: 4, label: 'Cuernos de neón (Prem. Dom. N)' },
+    'M': { name: 'ram', dominance: 3, label: 'Cuernos de carnero (Dom. M)' },
+    'A': { name: 'small', dominance: 2, label: 'Cuernos pequeños (Dom. A)' },
     'h': { name: 'none', dominance: 1, label: 'Sin Cuernos (Rec. h)' }
   },
   wings: {
-    'D': { name: 'dragon', dominance: 4, label: 'Alas de Dragón (Prem. Dom. D)' },
-    'G': { name: 'angel', dominance: 3, label: 'Alas de Ángel (Dom. G)' },
+    'D': { name: 'dragon', dominance: 4, label: 'Alas de dragón (Prem. Dom. D)' },
+    'G': { name: 'angel', dominance: 3, label: 'Alas de ángel (Dom. G)' },
     'w': { name: 'none', dominance: 1, label: 'Sin Alas (Rec. w)' }
   }
 };
@@ -194,7 +261,7 @@ export function getWokamonScale(genotype) {
   return 1.0; // Medium scale
 }
 
-// Create a baby Wokamon Niño with Homozygous low heterozygosity genes
+// Create a baby Wokamon Niño with homozygous low heterozygosity genes
 export function createWokamonChild(name = 'Bebé Woki') {
   const genotype = {
     bodyType: ['R', 'R'],
@@ -243,6 +310,8 @@ const defaultState = {
     crystals: 5,
     isPremium: false,
     firstWalkDone: false,
+    lastCareSettlementKey: null,
+    stepHistory: [],
   },
   wokamons: [],
   eggs: [],
@@ -253,8 +322,8 @@ const defaultState = {
     partnerName: '',
     partnerWokamon: null,
     stepsWalked: 0,
-    stepsTarget: 2000,
-    successChance: 0.2,
+    stepsTarget: 5000,
+    successChance: 0.5,
     isViable: true,
     resultEggColor: '#f5f5f5',
     resultEggGenetics: null
@@ -320,7 +389,7 @@ class GameState {
       
       if (userSnap.exists()) {
         const data = userSnap.data();
-        this.userStats = data.user || JSON.parse(JSON.stringify(defaultState.user));
+        this.userStats = { ...JSON.parse(JSON.stringify(defaultState.user)), ...(data.user || {}) };
         this.matingState = data.matingState || JSON.parse(JSON.stringify(defaultState.matingState));
         this.shop = data.shop || JSON.parse(JSON.stringify(defaultState.shop));
         this.collection = data.collection || [];
@@ -343,6 +412,7 @@ class GameState {
       const woksColl = collection(db, 'users', uid, 'wokamons');
       const woksSnap = await getDocs(woksColl);
       this.wokamons = woksSnap.docs.map(d => d.data());
+      this.wokamons.forEach(w => this.normalizeWokamonLifecycle(w));
       
       // Load Eggs
       const eggsColl = collection(db, 'users', uid, 'eggs');
@@ -431,7 +501,7 @@ class GameState {
       const credential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(credential.user, { displayName });
       await this.saveUserProfile(credential.user);
-      this.logActivity('WALK', `✨ ¡Bienvenido a Wokamon, ${displayName}! Tu criadero biológico ha sido creado.`);
+      this.logActivity('WALK', `Bienvenido a Wokamon, ${displayName}. Tu criadero biológico ha sido creado.`);
       return { success: true };
     } catch (error) {
       return { success: false, message: getFriendlyAuthError(error, 'Error en el registro') };
@@ -444,7 +514,7 @@ class GameState {
     try {
       const credential = await signInWithEmailAndPassword(auth, email, password);
       await this.saveUserProfile(credential.user);
-      this.logActivity('WALK', `🔑 Sesión iniciada como ${getAuthDisplayName(credential.user)}.`);
+      this.logActivity('WALK', `Sesión iniciada como ${getAuthDisplayName(credential.user)}.`);
       return { success: true };
     } catch (error) {
       return { success: false, message: getFriendlyAuthError(error, 'Usuario o contraseña incorrectos') };
@@ -469,7 +539,7 @@ class GameState {
       const signedUser = auth.currentUser;
       if (signedUser) {
         await this.saveUserProfile(signedUser);
-        this.logActivity('WALK', `🔑 Sesión iniciada con Google como ${getAuthDisplayName(signedUser)}.`);
+        this.logActivity('WALK', `Sesión iniciada con Google como ${getAuthDisplayName(signedUser)}.`);
       }
 
       return { success: true };
@@ -497,7 +567,7 @@ class GameState {
       const signedUser = auth.currentUser;
       if (signedUser) {
         await this.saveUserProfile(signedUser);
-        this.logActivity('WALK', `🎮 Sesión iniciada con Google Play Games.`);
+        this.logActivity('WALK', 'Sesión iniciada con Google Play Games.');
       }
 
       return { success: true };
@@ -573,7 +643,7 @@ class GameState {
     const signature = `bodyType:${wokamon.genetics.bodyType}|ears:${wokamon.genetics.ears}|eyes:${wokamon.genetics.eyes}|horns:${wokamon.genetics.horns}|wings:${wokamon.genetics.wings}`;
     if (!this.collection.includes(signature)) {
       this.collection.push(signature);
-      this.logActivity('HATCH', `📖 ¡Registrado en Wokadex: ${wokamon.name} descubrió nuevos rasgos!`);
+      this.logActivity('HATCH', `Registrado en Wokadex: ${wokamon.name} descubrió nuevos rasgos.`);
       this.saveAll();
     }
   }
@@ -590,14 +660,86 @@ class GameState {
 
   togglePremium() {
     this.userStats.isPremium = !this.userStats.isPremium;
-    this.logActivity('SHOP_BUY', this.userStats.isPremium ? '💎 Suscripción Premium activada.' : '🔓 Suscripción Premium desactivada.');
+    this.logActivity('SHOP_BUY', this.userStats.isPremium ? 'Suscripción Premium activada.' : 'Suscripción Premium desactivada.');
     this.saveAll();
   }
 
-  addSteps(amount) {
+  getWokamonLifespan(wokamon) {
+    const phenotype = getPhenotype(wokamon.genotype);
+    let lifespan = BASE_LIFESPAN_DAYS;
+
+    if (phenotype.wings === 'angel' || phenotype.wings === 'dragon') lifespan += 4;
+    if (phenotype.bodyType === 'cloud' || phenotype.bodyType === 'blob') lifespan += 2;
+    if (phenotype.eyes === 'sparkle' || phenotype.eyes === 'fire') lifespan += 2;
+    if (phenotype.horns === 'ram' || phenotype.horns === 'neon') lifespan -= 2;
+    if (wokamon.heterozygosity >= 80) lifespan += 3;
+    else if (wokamon.heterozygosity >= 40) lifespan += 1;
+    if (wokamon.efficientMetabolism) lifespan += 2;
+
+    return Math.max(24, Math.min(42, lifespan));
+  }
+
+  getDailyStepNeed(wokamon) {
+    const phenotype = getPhenotype(wokamon.genotype);
+    let need = DAILY_STEPS_PER_WOKAMON;
+
+    if (wokamon.efficientMetabolism) need *= 0.85;
+    if (phenotype.bodyType === 'cloud' || phenotype.bodyType === 'blob') need *= 0.95;
+    if (wokamon.heterozygosity >= 80) need *= 0.9;
+
+    return Math.round(need / 50) * 50;
+  }
+
+  normalizeWokamonLifecycle(wokamon) {
+    if (!wokamon) return null;
+
+    const maxVit = getMaxVitality(wokamon.genotype);
+    const lifespan = this.getWokamonLifespan(wokamon);
+
+    if (wokamon.age === undefined || Number.isNaN(Number(wokamon.age))) wokamon.age = 0;
+    if (wokamon.joy === undefined) wokamon.joy = 100;
+    if (wokamon.disease === undefined) wokamon.disease = 0;
+    if (wokamon.vitality === undefined) wokamon.vitality = maxVit;
+    if (wokamon.dailyDeficitDays === undefined) wokamon.dailyDeficitDays = 0;
+    if (wokamon.dailyStepNeed === undefined) wokamon.dailyStepNeed = this.getDailyStepNeed(wokamon);
+    wokamon.maxVitality = maxVit;
+    wokamon.lifespanDays = lifespan;
+
+    if (wokamon.status === 'dead') {
+      wokamon.stage = 'Fantasma';
+      return wokamon;
+    }
+
+    if (wokamon.age >= Math.floor(lifespan * 0.75) || wokamon.level >= 10) {
+      wokamon.stage = 'Anciano';
+    } else if (wokamon.age >= 7 || wokamon.level >= 3) {
+      wokamon.stage = 'Adulto';
+    } else {
+      wokamon.stage = 'Niño';
+    }
+
+    return wokamon;
+  }
+
+  recordStepHistory(steps, used) {
+    const date = new Date().toISOString().slice(0, 10);
+    const history = this.userStats.stepHistory || [];
+    const existing = history.find(item => item.date === date);
+
+    if (existing) {
+      existing.steps = Math.max(existing.steps || 0, steps || 0);
+      existing.used = (existing.used || 0) + (used || 0);
+    } else {
+      history.push({ date, steps: steps || 0, used: used || 0 });
+    }
+
+    this.userStats.stepHistory = history.slice(-30);
+  }
+
+  addSteps(amount, source = 'manual') {
     if (!this.activeUser) return { actualAdded: 0, energyEarned: 0, firstChildTriggered: false };
     
-    const limit = this.userStats.isPremium ? Infinity : 1500;
+    const limit = this.userStats.isPremium ? Infinity : DAILY_STEP_LIMIT_FREE;
     
     let actualAdded = amount;
     if (this.userStats.stepsToday + amount > limit) {
@@ -606,11 +748,12 @@ class GameState {
 
     this.userStats.stepsToday += actualAdded;
     
-    const energyEarned = Math.floor(actualAdded / 10);
+    const energyEarned = actualAdded;
     this.userStats.totalEnergy += energyEarned;
 
     if (actualAdded >= 200) {
-      this.logActivity('WALK', `🔋 Simulaste caminata: +${actualAdded} pasos y ganaste +${energyEarned} EP.`);
+      const action = source === 'mobile' ? 'Sincronizaste pasos' : 'Sumaste pasos';
+      this.logActivity('WALK', `Pasos: ${action.toLowerCase()} +${actualAdded}.`);
     }
 
     let firstChildTriggered = false;
@@ -621,7 +764,7 @@ class GameState {
       this.userStats.firstWalkDone = true;
       firstChildTriggered = true;
       
-      this.logActivity('HATCH', "🐣 ¡Milagro! Tus primeros pasos atrajeron a Woki Bebé.");
+      this.logActivity('HATCH', 'Tus primeros pasos atrajeron a Woki Bebé.');
     }
 
     if (this.matingState.stage === 'walking') {
@@ -633,7 +776,7 @@ class GameState {
         this.matingState.isViable = roll <= this.matingState.successChance;
         
         this.matingState.stage = 'completed';
-        this.logActivity('BREED', `🥚 Caminata del Huevo completada con viabilidad: ${this.matingState.isViable ? 'VIABLE' : 'CRÍTICO'}.`);
+        this.logActivity('BREED', `Caminata del huevo completada con viabilidad: ${this.matingState.isViable ? 'viable' : 'crítica'}.`);
       }
     }
 
@@ -673,20 +816,15 @@ class GameState {
       growthMultiplier = 1.15; // +15% Hybrid Vigor
     }
     
-    wokamon.growth += Math.floor(energyAmount * 2 * growthMultiplier);
-    this.logActivity('FEED', `🍖 Alimentaste a ${wokamon.name}. Hambre +30%.`);
+    wokamon.growth += Math.floor((energyAmount / 5) * growthMultiplier);
+    this.logActivity('FEED', `Alimentaste a ${wokamon.name} con ${energyAmount} pasos. Hambre +30%.`);
     
     if (wokamon.growth >= 100) {
       wokamon.level += 1;
       wokamon.growth = wokamon.growth - 100;
-      
-      if (wokamon.level >= 5) {
-        wokamon.stage = 'Anciano';
-      } else if (wokamon.level >= 3) {
-        wokamon.stage = 'Adulto';
-      }
+      this.normalizeWokamonLifecycle(wokamon);
 
-      this.logActivity('FEED', `⭐ ¡${wokamon.name} ha evolucionado a Nivel ${wokamon.level} (${wokamon.stage})!`);
+      this.logActivity('FEED', `${wokamon.name} ha evolucionado a nivel ${wokamon.level} (${wokamon.stage}).`);
       this.userStats.crystals += wokamon.level * 2;
     }
 
@@ -728,7 +866,7 @@ class GameState {
       wokamon.status = 'starving';
     }
 
-    this.logActivity('FEED', `💊 Suministraste medicina a ${wokamon.name} (-10 Cristales). ¡Curado!`);
+    this.logActivity('FEED', `Suministraste medicina a ${wokamon.name} (-10 cristales). Curado.`);
     this.saveAll();
     return true;
   }
@@ -747,7 +885,7 @@ class GameState {
     if (!parent || parent.status === 'dead' || parent.stage === 'Niño') return false;
 
     egg.incubatingParentId = parentId;
-    this.logActivity('BREED', `🐣 Asignaste a ${parent.name} para incubar el Huevo.`);
+    this.logActivity('BREED', `Asignaste a ${parent.name} para incubar el huevo.`);
     this.saveAll();
     return true;
   }
@@ -764,7 +902,7 @@ class GameState {
     });
 
     this.userStats.crystals += 15;
-    this.logActivity('GIFT', `🍃 Liberaste a ${targetWok.name} en la naturaleza (+15 Cristales).`);
+    this.logActivity('GIFT', `Liberaste a ${targetWok.name} en la naturaleza (+15 cristales).`);
     this.saveAll();
 
     // Explicit cloud delete
@@ -793,7 +931,7 @@ class GameState {
     });
 
     this.userStats.crystals += 10;
-    this.logActivity('GIFT', `🎁 Empaquetaste a ${wokamon.name} como código de regalo (+10 Cristales).`);
+    this.logActivity('GIFT', `Empaquetaste a ${wokamon.name} como código de regalo (+10 cristales).`);
     this.saveAll();
 
     // Explicit cloud delete
@@ -817,7 +955,7 @@ class GameState {
 
     this.eggs = this.eggs.filter(e => e.id !== id);
     this.userStats.crystals += 8;
-    this.logActivity('GIFT', `🎁 Empaquetaste Huevo Gen ${egg.generation} como código de regalo (+8 Cristales).`);
+    this.logActivity('GIFT', `Empaquetaste Huevo Gen ${egg.generation} como código de regalo (+8 cristales).`);
     this.saveAll();
 
     // Explicit cloud delete
@@ -840,7 +978,7 @@ class GameState {
         const egg = payload.egg;
         egg.id = 'egg_' + Math.random().toString(36).substr(2, 9);
         this.eggs.push(egg);
-        this.logActivity('CLAIM', `✨ Importaste un Huevo Genético de un amigo.`);
+        this.logActivity('CLAIM', 'Importaste un huevo genético de un amigo.');
         this.saveAll();
         return { type: 'egg', item: egg };
       }
@@ -850,7 +988,7 @@ class GameState {
         wokamon.id = generateId();
         this.wokamons.push(wokamon);
         this.registerDiscovery(wokamon);
-        this.logActivity('CLAIM', `✨ Adoptaste al Wokamon ${wokamon.name} de un amigo.`);
+        this.logActivity('CLAIM', `Adoptaste al Wokamon ${wokamon.name} de un amigo.`);
         this.saveAll();
         return { type: 'wokamon', item: wokamon };
       }
@@ -860,7 +998,7 @@ class GameState {
     return null;
   }
 
-  startNfcMating(parentAId, stepsTarget = 2000) {
+  startNfcMating(parentAId, stepsTarget = 5000) {
     const parentA = this.wokamons.find(w => w.id === parentAId);
     if (!parentA || parentA.status === 'dead' || parentA.stage === 'Niño') return false;
 
@@ -904,7 +1042,7 @@ class GameState {
       resultEggGenetics: null
     };
 
-    this.logActivity('BREED', `🧬 Ritual NFC: Wokamon ${parentA.name} acoplado con ${partner.name}.`);
+    this.logActivity('BREED', `Ritual NFC: Wokamon ${parentA.name} acoplado con ${partner.name}.`);
     this.saveAll();
     return true;
   }
@@ -917,8 +1055,8 @@ class GameState {
       partnerName: '',
       partnerWokamon: null,
       stepsWalked: 0,
-      stepsTarget: 2000,
-      successChance: 0.2,
+      stepsTarget: 5000,
+      successChance: 0.5,
       isViable: true
     };
     this.saveAll();
@@ -927,14 +1065,15 @@ class GameState {
   advanceMatingToWalking() {
     if (this.matingState.stage === 'paired') {
       this.matingState.stage = 'walking';
-      this.logActivity('BREED', `🏃 Empezó caminata gestacional (${this.matingState.stepsTarget} pasos requeridos).`);
+      this.logActivity('BREED', `Empezó la caminata gestacional (${this.matingState.stepsTarget} pasos requeridos).`);
       this.saveAll();
     }
   }
 
-  addMatedEggToIncubator(childGenetics) {
+  addMatedEggToIncubator(childGenetics = null) {
     const parentA = this.wokamons.find(w => w.id === this.matingState.parentAId);
     const partner = this.matingState.partnerWokamon;
+    if (!partner) return null;
     const gen = parentA ? parentA.generation + 1 : 2;
 
     const parentAGenotype = parentA.genotype || {
@@ -945,6 +1084,11 @@ class GameState {
 
     const targetSteps = this.matingState.stepsTarget;
     const efficientMetabolism = targetSteps >= 8000;
+    const resolvedGenetics = childGenetics || {
+      primaryColor: parentA?.genetics?.primaryColor || partner.genetics.primaryColor || '#ffcc00',
+      bellyColor: parentA?.genetics?.bellyColor || partner.genetics.bellyColor || '#ffe57f',
+      paintedPattern: null
+    };
 
     const newEgg = {
       id: 'egg_' + Math.random().toString(36).substr(2, 9),
@@ -952,7 +1096,7 @@ class GameState {
       parentAName: parentA ? parentA.name : 'Tú',
       parentBName: partner ? partner.name : 'Paco',
       generation: gen,
-      genetics: childGenetics,
+      genetics: resolvedGenetics,
       genotype: childGenotype,
       pointsCurrent: 0,
       pointsTarget: 1500,
@@ -992,20 +1136,68 @@ class GameState {
       partnerName: '',
       partnerWokamon: null,
       stepsWalked: 0,
-      stepsTarget: 2000,
-      successChance: 0.2,
+      stepsTarget: 5000,
+      successChance: 0.5,
       isViable: true
     };
 
-    this.logActivity('BREED', `🥚 Huevo Gen ${gen} colocado en Incubadora. listo para incubación.`);
+    this.logActivity('BREED', `Huevo Gen ${gen} colocado en incubadora.`);
     this.saveAll();
     return newEgg;
+  }
+
+  hatchCompletedEgg(eggId, name = '') {
+    const egg = this.eggs.find(e => e.id === eggId);
+    if (!egg || egg.pointsCurrent < egg.pointsTarget || !egg.isViable) return null;
+
+    const phenotype = getPhenotype(egg.genotype);
+    const maxVit = getMaxVitality(egg.genotype);
+    const baby = {
+      id: generateId(),
+      name: name || getRandomName(),
+      level: 1,
+      growth: 0,
+      age: 0,
+      hunger: 100,
+      joy: 100,
+      disease: 0,
+      vitality: maxVit,
+      status: 'happy',
+      stage: 'Niño',
+      generation: egg.generation,
+      genotype: egg.genotype,
+      heterozygosity: getHeterozygosity(egg.genotype),
+      familyTree: egg.familyTree,
+      efficientMetabolism: egg.efficientMetabolism,
+      genetics: {
+        bodyType: phenotype.bodyType,
+        ears: phenotype.ears,
+        eyes: phenotype.eyes,
+        horns: phenotype.horns,
+        wings: phenotype.wings,
+        primaryColor: egg.genetics?.primaryColor || '#ffcc00',
+        bellyColor: egg.genetics?.bellyColor || '#ffe57f',
+        paintedPattern: null
+      }
+    };
+
+    this.eggs = this.eggs.filter(e => e.id !== eggId);
+    this.wokamons.push(baby);
+    this.registerDiscovery(baby);
+    this.logActivity('HATCH', `Ha nacido ${baby.name} del Huevo Gen ${egg.generation}.`);
+    this.saveAll();
+
+    if (this.activeUser) {
+      deleteDoc(doc(db, 'users', this.activeUser, 'eggs', eggId)).catch(e => console.error(e));
+    }
+
+    return baby;
   }
 
   async cancelFailedEgg(eggId) {
     this.eggs = this.eggs.filter(e => e.id !== eggId);
     this.userStats.crystals += 15;
-    this.logActivity('HATCH', `💔 Huevo no viable eclosionó vacío. +15 Cristales concedidos.`);
+    this.logActivity('HATCH', 'Huevo no viable eclosionó vacío. +15 cristales concedidos.');
     this.saveAll();
 
     // Explicit cloud delete
@@ -1020,160 +1212,140 @@ class GameState {
     if (this.userStats.crystals >= crystalCost && !this.shop.unlockedGenes.includes(geneName)) {
       this.userStats.crystals -= crystalCost;
       this.shop.unlockedGenes.push(geneName);
-      this.logActivity('SHOP_BUY', `🧬 Desbloqueaste el Gen de mutación "${geneName}" en la Tienda.`);
+      this.logActivity('SHOP_BUY', `Desbloqueaste el gen de mutación "${geneName}" en la tienda.`);
       this.saveAll();
       return true;
     }
     return false;
   }
 
-  tickGameTime() {
-    if (!this.activeUser) return;
-    
-    let stateChanged = false;
-    const livingWoks = this.wokamons.filter(w => w.status !== 'dead');
-    const numLiving = livingWoks.length;
+  settleDailyCareIfNeeded(now = new Date()) {
+    if (!this.activeUser) return { settled: false, daysAdvanced: 0 };
 
-    let decayMultiplier = 1;
-    if (numLiving > 1) {
-      decayMultiplier = 1 + (numLiving - 1) * 0.6;
+    const currentKey = getLocalCareCycleKey(now);
+
+    if (!this.userStats.lastCareSettlementKey) {
+      this.userStats.lastCareSettlementKey = currentKey;
+      this.saveAll();
+      return { settled: false, daysAdvanced: 0 };
     }
+
+    const missedDays = getDaysBetweenCareKeys(this.userStats.lastCareSettlementKey, currentKey);
+    if (missedDays <= 0) return { settled: false, daysAdvanced: 0 };
+
+    const daysToAdvance = Math.min(missedDays, 14);
+    for (let i = 0; i < daysToAdvance; i += 1) {
+      this.advanceOneDay({ automatic: true, persist: false });
+    }
+
+    this.userStats.lastCareSettlementKey = currentKey;
+    this.logActivity('WALK', `Reparto automático de las 05:00 aplicado (${daysToAdvance} día${daysToAdvance === 1 ? '' : 's'}).`);
+    this.saveAll();
+    return { settled: true, daysAdvanced: daysToAdvance };
+  }
+
+  advanceOneDay(options = {}) {
+    if (!this.activeUser) return false;
+    const { automatic = false, persist = true } = options;
+
+    const livingWoks = this.wokamons.filter(w => w.status !== 'dead');
+    const dailyNeeds = new Map();
+    let totalDailyNeed = 0;
+
+    livingWoks.forEach(wokamon => {
+      this.normalizeWokamonLifecycle(wokamon);
+      const need = this.getDailyStepNeed(wokamon);
+      wokamon.dailyStepNeed = need;
+      dailyNeeds.set(wokamon.id, need);
+      totalDailyNeed += need;
+    });
+
+    const availableSteps = this.userStats.totalEnergy || 0;
+    const stepsUsed = Math.min(availableSteps, totalDailyNeed);
+    const coverageRatio = totalDailyNeed > 0 ? Math.min(1, stepsUsed / totalDailyNeed) : 1;
+    this.recordStepHistory(this.userStats.stepsToday || 0, stepsUsed);
+    this.userStats.totalEnergy = Math.max(0, availableSteps - stepsUsed);
+    this.userStats.stepsToday = 0;
 
     this.wokamons.forEach(wokamon => {
       if (wokamon.status === 'dead') return;
 
-      stateChanged = true;
-
-      // 1. AGE DECAY (Lifecycle): Wings slow aging by 35%
-      const phenotype = getPhenotype(wokamon.genotype);
-      const hasAgingWings = phenotype.wings === 'dragon' || phenotype.wings === 'angel';
-      const ageMultiplier = hasAgingWings ? 0.65 : 1.0;
-      const ageSpeed = (wokamon.stage === 'Anciano' ? 0.08 : 0.04) * ageMultiplier;
-      wokamon.age += ageSpeed;
-
-      // Check for death of old age (e.g. if age > 60 days simulated)
-      if (wokamon.age >= 60) {
-        wokamon.status = 'dead';
-        wokamon.vitality = 0;
-        this.logActivity('HATCH', `💀 ¡${wokamon.name} ha muerto de vejez venerable! A la edad de ${Math.floor(wokamon.age)} días.`);
-        return;
-      }
-
-      // Initialize stats if missing (retrocompatibility)
-      if (wokamon.joy === undefined) wokamon.joy = 100;
-      if (wokamon.disease === undefined) wokamon.disease = 0;
-      
+      wokamon.age = Math.floor((wokamon.age || 0) + 1);
       const maxVit = getMaxVitality(wokamon.genotype);
-      if (wokamon.vitality === undefined) wokamon.vitality = maxVit;
+      const lifespan = this.getWokamonLifespan(wokamon);
+      const missingRatio = 1 - coverageRatio;
 
-      // 2. HUNGER DECAY: cloud/blob slows by 20%. neon/ram horns speeds up by 10%.
-      let hungerMultiplier = 1.0;
-      if (phenotype.bodyType === 'cloud' || phenotype.bodyType === 'blob') {
-        hungerMultiplier -= 0.20;
-      }
-      if (phenotype.horns === 'neon' || phenotype.horns === 'ram') {
-        hungerMultiplier += 0.10;
-      }
-      
-      // Standard hybrid heterozygosity bonuses
-      if (wokamon.heterozygosity >= 80) {
-        hungerMultiplier -= 0.25;
-      } else if (wokamon.heterozygosity >= 40) {
-        hungerMultiplier -= 0.10;
-      }
-      
-      if (wokamon.efficientMetabolism) {
-        hungerMultiplier -= 0.15;
-      }
-      
-      hungerMultiplier = Math.max(0.4, hungerMultiplier);
-      const hungerLoss = parseFloat((1.5 * decayMultiplier * hungerMultiplier).toFixed(2));
-      wokamon.hunger = Math.max(0, parseFloat((wokamon.hunger - hungerLoss).toFixed(2)));
-
-      // 3. JOY DECAY: teddy/long ears slows by 30%
-      let joyMultiplier = 1.0;
-      if (phenotype.ears === 'teddy' || phenotype.ears === 'long') {
-        joyMultiplier -= 0.30;
-      }
-      if (wokamon.status === 'starving' || wokamon.status === 'sick') {
-        joyMultiplier += 0.40; // Decays faster if starving or sick
-      }
-      const joyLoss = parseFloat((1.2 * decayMultiplier * joyMultiplier).toFixed(2));
-      wokamon.joy = Math.max(0, parseFloat((wokamon.joy - joyLoss).toFixed(2)));
-
-      // 4. DISEASE ACCUMULATION: fire/sparkle eyes reduces rate by 40%
-      let diseaseAccumulation = 0;
-      if (wokamon.hunger === 0) {
-        diseaseAccumulation += 4.0; // Starving causes illness
-      }
-      if (wokamon.joy < 30) {
-        diseaseAccumulation += 2.0; // Sadness causes illness
-      }
-      
-      if (diseaseAccumulation > 0) {
-        let diseaseMultiplier = 1.0;
-        if (phenotype.eyes === 'fire' || phenotype.eyes === 'sparkle') {
-          diseaseMultiplier -= 0.40; // 40% resistance
-        }
-        wokamon.disease = Math.min(100, parseFloat((wokamon.disease + diseaseAccumulation * diseaseMultiplier).toFixed(2)));
+      if (coverageRatio >= 1) {
+        wokamon.dailyDeficitDays = 0;
+        wokamon.hunger = Math.min(100, (wokamon.hunger || 100) + 12);
+        wokamon.joy = Math.min(100, (wokamon.joy || 100) + 8);
+        wokamon.disease = Math.max(0, (wokamon.disease || 0) - 6);
+        wokamon.vitality = Math.min(maxVit, (wokamon.vitality || maxVit) + 5);
       } else {
-        // Natural slow recovery if healthy and happy
-        wokamon.disease = Math.max(0, parseFloat((wokamon.disease - 1.5).toFixed(2)));
+        wokamon.dailyDeficitDays = (wokamon.dailyDeficitDays || 0) + 1;
+        wokamon.hunger = Math.max(0, (wokamon.hunger || 100) - Math.ceil(22 * missingRatio));
+        wokamon.joy = Math.max(0, (wokamon.joy || 100) - Math.ceil(16 * missingRatio));
+
+        if (wokamon.dailyDeficitDays >= 2) {
+          wokamon.disease = Math.min(100, (wokamon.disease || 0) + Math.ceil(7 * missingRatio));
+        }
+
+        if (wokamon.dailyDeficitDays >= 4 || wokamon.hunger <= 10 || wokamon.disease >= 65) {
+          const healthPenalty = (wokamon.hunger <= 10 ? 4 : 0) + (wokamon.disease >= 65 ? 4 : 0);
+          wokamon.vitality = Math.max(0, (wokamon.vitality || maxVit) - Math.ceil(10 * missingRatio + healthPenalty));
+        }
       }
 
-      // 5. VITALITY DECAY: If hunger is 0 or disease is high
-      let vitalityLoss = 0;
-      if (wokamon.hunger === 0) {
-        vitalityLoss += 3.0;
-      }
-      if (wokamon.disease >= 80) {
-        vitalityLoss += 5.0; // Sick causes rapid vitality decay
-      } else if (wokamon.disease >= 40) {
-        vitalityLoss += 1.5;
+      if (wokamon.age >= lifespan) {
+        const oldAgePenalty = wokamon.age >= lifespan + 5 || wokamon.hunger < 45 || wokamon.disease > 35 || wokamon.vitality < maxVit * 0.45;
+        if (oldAgePenalty) {
+          wokamon.vitality = Math.max(0, (wokamon.vitality || maxVit) - 8);
+        }
       }
 
-      if (vitalityLoss > 0) {
-        wokamon.vitality = Math.max(0, parseFloat((wokamon.vitality - vitalityLoss).toFixed(2)));
-      } else if (wokamon.hunger > 50 && wokamon.disease < 20) {
-        // Natural healing
-        wokamon.vitality = Math.min(maxVit, parseFloat((wokamon.vitality + 2.0).toFixed(2)));
-      }
-
-      // Check for death of health issues
-      if (wokamon.vitality === 0) {
+      if (wokamon.vitality <= 0) {
         wokamon.status = 'dead';
-        this.logActivity('HATCH', `💀 ¡${wokamon.name} ha muerto de enfermedad/inanición! Ahora vaga como fantasma.`);
+        wokamon.stage = 'Fantasma';
+        this.logActivity('HATCH', `${wokamon.name} ha muerto tras varios días con la salud muy baja.`);
         return;
       }
 
-      // Update status tag
-      if (wokamon.disease >= 50) {
+      this.normalizeWokamonLifecycle(wokamon);
+
+      if (wokamon.disease >= 60) {
         wokamon.status = 'sick';
-      } else if (wokamon.hunger <= 25) {
+      } else if (wokamon.hunger <= 15 || wokamon.dailyDeficitDays >= 4) {
         wokamon.status = 'starving';
-      } else if (wokamon.joy <= 30 || wokamon.hunger <= 50) {
+      } else if (wokamon.joy <= 40 || wokamon.hunger <= 45 || wokamon.dailyDeficitDays >= 2) {
         wokamon.status = 'depressed';
       } else {
         wokamon.status = 'happy';
       }
 
-      // Happy rewards
-      if (wokamon.status === 'happy' && Math.random() < 0.1) {
+      if (wokamon.status === 'happy' && Math.random() < 0.08) {
         this.userStats.crystals += wokamon.level;
       }
     });
 
     this.eggs.forEach(egg => {
       if (egg.incubatingParentId) {
-        stateChanged = true;
-        egg.pointsCurrent = Math.min(egg.pointsTarget, egg.pointsCurrent + 10);
+        egg.pointsCurrent = Math.min(egg.pointsTarget, egg.pointsCurrent + 100);
         egg.incubationProgress = parseFloat(((egg.pointsCurrent / egg.pointsTarget) * 15).toFixed(2));
       }
     });
 
-    if (stateChanged) {
+    if (!automatic) {
+      this.logActivity('WALK', `Ha pasado 1 día en el criadero. Se usaron ${stepsUsed.toLocaleString()} pasos para cuidar a tus Wokamon.`);
+    }
+    if (persist) {
       this.saveAll();
     }
+    return true;
+  }
+
+  tickGameTime() {
+    // El tiempo ya no avanza en segundo plano; se controla con "Pasar 1 día".
+    return false;
   }
 
   resetAll() {
@@ -1184,3 +1356,5 @@ class GameState {
 
 export const store = new GameState();
 export default store;
+
+

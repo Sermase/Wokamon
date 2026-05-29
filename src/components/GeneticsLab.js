@@ -1,14 +1,15 @@
 // Wokamon Evolucionado - Egg Painter & Genetics Laboratory Component
 
-import store, { calculatePunnettSquare } from '../utils/state.js';
+import store, { calculatePunnettSquare, getTraitValueLabel } from '../utils/state.js';
 import { renderWokamonSVG } from './WokamonRenderer.js';
 
 export class GeneticsLab {
-  constructor() {
+  constructor(options = {}) {
     this.container = null;
     this.parentA = null;
     this.parentB = null;
-    this.activeSubTab = 'lab'; // lab or dex
+    this.lockedMode = options.mode || null;
+    this.activeSubTab = this.lockedMode === 'dex' ? 'dex' : 'lab';
     
     // Canvas Paint Variables
     this.currentColor = '#ffcc00';
@@ -31,8 +32,8 @@ export class GeneticsLab {
     
     // Switch automatic mating completed redirect listener
     window.addEventListener('mating-completed', (e) => {
-      this.parentA = e.detail.parentA;
-      this.parentB = e.detail.parentB;
+      this.parentA = null;
+      this.parentB = null;
       this.activeSubTab = 'lab';
       this.render();
     });
@@ -42,130 +43,6 @@ export class GeneticsLab {
     });
 
     this.render();
-  }
-
-  setupCanvas() {
-    this.canvas = this.container.querySelector('#egg-paint-canvas');
-    if (!this.canvas) return;
-
-    this.ctx = this.canvas.getContext('2d');
-    
-    if (this.canvasBackup) {
-      this.ctx.drawImage(this.canvasBackup, 0, 0);
-    } else {
-      // Set base egg outline shape
-      this.ctx.fillStyle = '#ffffff';
-      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      
-      // Add default speckled egg pattern
-      this.ctx.fillStyle = '#fce4ec';
-      for (let i = 0; i < 6; i++) {
-        this.ctx.beginPath();
-        this.ctx.arc(40 + Math.random() * 70, 40 + Math.random() * 80, 5 + Math.random() * 5, 0, Math.PI * 2);
-        this.ctx.fill();
-      }
-    }
-
-    // Set drawing hooks
-    const getPos = (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return {
-        x: ((clientX - rect.left) / rect.width) * this.canvas.width,
-        y: ((clientY - rect.top) / rect.height) * this.canvas.height
-      };
-    };
-
-    const startDraw = (e) => {
-      e.preventDefault();
-      this.isDrawing = true;
-      const pos = getPos(e);
-      this.ctx.beginPath();
-      this.ctx.moveTo(pos.x, pos.y);
-    };
-
-    const draw = (e) => {
-      if (!this.isDrawing) return;
-      e.preventDefault();
-      const pos = getPos(e);
-      
-      this.ctx.lineWidth = this.currentBrushSize;
-      this.ctx.lineCap = 'round';
-      this.ctx.lineJoin = 'round';
-
-      if (this.isPremiumBrush) {
-        // Dynamic Neon Rainbow brush effect
-        const hue = (Date.now() / 6) % 360;
-        this.ctx.strokeStyle = `hsla(${hue}, 100%, 65%, 0.95)`;
-        this.ctx.shadowBlur = 10;
-        this.ctx.shadowColor = `hsla(${hue}, 100%, 65%, 0.8)`;
-      } else {
-        this.ctx.strokeStyle = this.currentColor;
-        this.ctx.shadowBlur = 0;
-      }
-
-      this.ctx.lineTo(pos.x, pos.y);
-      this.ctx.stroke();
-    };
-
-    const stopDraw = () => {
-      this.isDrawing = false;
-    };
-
-    this.canvas.addEventListener('mousedown', startDraw);
-    this.canvas.addEventListener('mousemove', draw);
-    this.canvas.addEventListener('mouseup', stopDraw);
-    this.canvas.addEventListener('mouseleave', stopDraw);
-
-    this.canvas.addEventListener('touchstart', startDraw);
-    this.canvas.addEventListener('touchmove', draw);
-    this.canvas.addEventListener('touchend', stopDraw);
-  }
-
-  // Punnett genetic hybridization mixing formula
-  mixGenetics() {
-    const parentA = this.parentA;
-    const parentB = this.parentB;
-    
-    // Calls reactive Mendelian Segregation cross
-    const childGenetics = {};
-    const traits = ['bodyType', 'ears', 'eyes', 'horns', 'wings'];
-    const user = store.getUser();
-
-    // Genetic Expressivity from Punnett
-    const parentAGen = parentA.genotype || { bodyType: ['R','R'], ears: ['T','T'], eyes: ['n','n'], horns: ['h','h'], wings: ['w','w'] };
-    const parentBGen = parentB.genotype || { bodyType: ['b','b'], ears: ['p','p'], eyes: ['F','n'], horns: ['M','h'], wings: ['D','w'] };
-    
-    // Inherit base colors painted by user on the canvas!
-    const drawnColors = this.extractCanvasColors();
-    childGenetics.primaryColor = drawnColors.primary;
-    childGenetics.bellyColor = drawnColors.bellyColor;
-    childGenetics.paintedPattern = 'M 35,65 Q 50,75 65,65';
-
-    return childGenetics;
-  }
-
-  extractCanvasColors() {
-    if (!this.canvas) return { primary: '#ffe082', bellyColor: '#ffecb3' };
-    
-    // Sample canvas centers
-    try {
-      const imgData1 = this.ctx.getImageData(30, 40, 1, 1).data;
-      const imgData2 = this.ctx.getImageData(80, 80, 1, 1).data;
-      
-      const rgbToHex = (r, g, b) => '#' + [r, g, b].map(x => {
-        const hex = x.toString(16);
-        return hex.length === 1 ? '0' + hex : hex;
-      }).join('');
-
-      return {
-        primary: rgbToHex(imgData1[0], imgData1[1], imgData1[2]),
-        bellyColor: rgbToHex(imgData2[0], imgData2[1], imgData2[2])
-      };
-    } catch(e) {
-      return { primary: '#e57373', bellyColor: '#ff8a80' };
-    }
   }
 
   // Shaking and eclosion loop sequence for a completed Egg
@@ -219,6 +96,27 @@ export class GeneticsLab {
   render() {
     if (!this.container) return;
 
+    if (this.lockedMode) {
+      this.activeSubTab = this.lockedMode === 'dex' ? 'dex' : 'lab';
+      this.container.innerHTML = `
+        <div class="genetics-lab-panel">
+          <div id="lab-subpanel-content"></div>
+        </div>
+      `;
+
+      const subContent = this.container.querySelector('#lab-subpanel-content');
+      if (this.activeSubTab === 'lab') {
+        if (this.hatchedBaby) {
+          this.renderHatchRevealMode(subContent);
+        } else {
+          this.renderIncubatorMode(subContent);
+        }
+      } else {
+        this.renderDexAndLogsMode(subContent);
+      }
+      return;
+    }
+
     // Set default subtab
     if (!this.activeSubTab) {
       this.activeSubTab = 'lab';
@@ -232,10 +130,10 @@ export class GeneticsLab {
         <!-- Lab Inner Tabs navigation -->
         <div class="lab-inner-nav glass-panel" style="display: flex; gap: 0.5rem; padding: 0.5rem; border-radius: 12px; margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.02);">
           <button class="btn btn-secondary btn-xs flex-center" id="btn-subtab-lab" style="flex: 1; padding: 0.6rem; gap: 0.35rem; font-weight: 700; border-radius: 8px;">
-            <span>🥚</span> Incubadora y Laboratorio (${eggs.length})
+            <span>Huevos</span> Incubadora (${eggs.length})
           </button>
           <button class="btn btn-secondary btn-xs flex-center" id="btn-subtab-dex" style="flex: 1; padding: 0.6rem; gap: 0.35rem; font-weight: 700; border-radius: 8px;">
-            <span>📖</span> Wokadex y Bitácora
+            <span>Dex</span> Wokadex y Bitácora
           </button>
         </div>
 
@@ -284,202 +182,12 @@ export class GeneticsLab {
     if (this.activeSubTab === 'lab') {
       if (this.hatchedBaby) {
         this.renderHatchRevealMode(subContent);
-      } else if (this.parentA && this.parentB) {
-        this.renderPaintMode(subContent);
       } else {
         this.renderIncubatorMode(subContent);
       }
     } else {
       this.renderDexAndLogsMode(subContent);
     }
-  }
-
-  // 1. PAINT MODE: Allows painting egg shell
-  renderPaintMode(subContentContainer) {
-    const user = store.getUser();
-    
-    subContentContainer.innerHTML = `
-      <div class="genetics-lab-card glass-panel animate-slide-in">
-        <h2 class="section-title">Laboratorio Genético y Pintado</h2>
-        <p class="subtitle">Personaliza la cáscara del huevo acoplado mediante pintura. El color de la cáscara influirá en el color del pelaje del bebé.</p>
-        
-        <div class="lab-workspace">
-          <!-- Paint Canvas side -->
-          <div class="canvas-panel">
-            <div class="canvas-bounding-box">
-              <div class="canvas-mask-egg">
-                <canvas id="egg-paint-canvas" width="150" height="200"></canvas>
-              </div>
-            </div>
-            
-            <p class="lbl-canvas-hint">¡Desliza tu dedo o arrastra sobre el huevo!</p>
-          </div>
-
-          <!-- Color Tool palette -->
-          <div class="controls-panel flex-col" style="gap: 1.25rem;">
-            <!-- Segmented Selector for simulated walk zone -->
-            <div>
-              <h3>🚶 Zona de la Caminata (Huella Digital)</h3>
-              <div class="walk-zone-selector" style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
-                <button class="btn btn-secondary btn-xs walk-zone-btn ${this.currentWalkZone === 'urbana' ? 'btn-active-goal' : ''}" data-zone="urbana" style="flex: 1; padding: 0.4rem; font-size: 0.7rem; font-weight: 700;">🏙️ Urbana</button>
-                <button class="btn btn-secondary btn-xs walk-zone-btn ${this.currentWalkZone === 'parque' ? 'btn-active-goal' : ''}" data-zone="parque" style="flex: 1; padding: 0.4rem; font-size: 0.7rem; font-weight: 700;">🌲 Parque</button>
-                <button class="btn btn-secondary btn-xs walk-zone-btn ${this.currentWalkZone === 'costa' ? 'btn-active-goal' : ''}" data-zone="costa" style="flex: 1; padding: 0.4rem; font-size: 0.7rem; font-weight: 700;">🌊 Costa</button>
-              </div>
-            </div>
-
-            <div>
-              <h3>🎨 Selección de Pincel</h3>
-              <div class="palette-swatches-grid" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
-                <button class="color-swatch swatch-active" data-color="#ffcc00" style="background: #ffcc00;"></button>
-                <button class="color-swatch" data-color="#e53935" style="background: #e53935;"></button>
-                <button class="color-swatch" data-color="#29b6f6" style="background: #29b6f6;"></button>
-                <button class="color-swatch" data-color="#ab47bc" style="background: #ab47bc;"></button>
-                <button class="color-swatch" data-color="#3f51b5" style="background: #3f51b5;"></button>
-                <button class="color-swatch" data-color="#66bb6a" style="background: #66bb6a;"></button>
-                
-                ${this.currentWalkZone === 'parque' ? `
-                  <button class="color-swatch premium-zone-swatch" data-color="#2e7d32" style="background: #2e7d32; border: 2.5px solid var(--primary-accent);" title="Verde Clorofila 🌲 (Desbloqueo Parque)">🌲</button>
-                ` : ''}
-                ${this.currentWalkZone === 'costa' ? `
-                  <button class="color-swatch premium-zone-swatch" data-color="#00838f" style="background: #00838f; border: 2.5px solid var(--primary-accent);" title="Azul Océano 🌊 (Desbloqueo Costa)">🌊</button>
-                ` : ''}
-
-                <!-- Premium Cosmic rainbow brush swatch -->
-                <button class="color-swatch ${!user.isPremium ? 'swatch-locked' : ''}" data-color="#neon-rainbow" title="Pincel Cósmico Neón (Premium)">
-                  🌈
-                </button>
-              </div>
-            </div>
-
-            <!-- Brush settings -->
-            <div>
-              <h3>📏 Tamaño de Pincel</h3>
-              <input type="range" id="brush-size-slider" min="6" max="30" value="12" style="width:100%; margin-top:0.4rem;">
-            </div>
-
-            <div class="parents-breeding-row flex-center" style="gap: 1.5rem; margin-top: 0.25rem;">
-              <div class="parent-card text-center" style="flex: 1;">
-                <span class="lbl" style="font-size: 0.55rem; color: var(--text-grey); font-weight: 700;">PROCESO EP (TÚ)</span>
-                <div class="mini-svg" style="height:45px; display:flex; justify-content:center; align-items:center;">
-                  <div style="width:36px; height:36px;">${renderWokamonSVG(this.parentA)}</div>
-                </div>
-                <h4 style="font-size: 0.72rem; margin: 0.15rem 0;">${this.parentA.name}</h4>
-              </div>
-
-              <div class="parent-card text-center" style="flex: 1;">
-                <span class="lbl" style="font-size: 0.55rem; color: var(--text-grey); font-weight: 700;">AMIGO</span>
-                <div class="mini-svg" style="height:45px; display:flex; justify-content:center; align-items:center;">
-                  <div style="width:36px; height:36px;">${renderWokamonSVG(this.parentB)}</div>
-                </div>
-                <h4 style="font-size: 0.72rem; margin: 0.15rem 0;">${this.parentB.name}</h4>
-              </div>
-            </div>
-
-            <!-- Punnett Mendelian Probabilities Table -->
-            <div class="punnett-probability-box glass-panel-inner pad-md" style="text-align: left; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(255,255,255,0.03); margin-top: 0.25rem;">
-              <h4 style="font-size: 0.75rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.35rem;">
-                🧬 Cruzamiento y Genética Mendeliana
-              </h4>
-              <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.65rem;">
-                ${(() => {
-                  const parentAGen = this.parentA.genotype || { bodyType: ['R','R'], ears: ['T','T'], eyes: ['n','n'], horns: ['h','h'], wings: ['w','w'] };
-                  const parentBGen = this.parentB.genotype || { bodyType: ['b','b'], ears: ['p','p'], eyes: ['F','n'], horns: ['M','h'], wings: ['D','w'] };
-                  const punnett = calculatePunnettSquare(parentAGen, parentBGen);
-                  
-                  return Object.keys(punnett).map(trait => {
-                    const traitName = trait === 'bodyType' ? 'Cuerpo' : (trait === 'ears' ? 'Orejas' : (trait === 'eyes' ? 'Ojos' : (trait === 'horns' ? 'Cuernos' : 'Alas')));
-                    const optionsList = punnett[trait].map(opt => {
-                      const percentage = Math.round(opt.chance * 100);
-                      return `<span style="font-weight: 700; color: var(--primary-accent);">${opt.name} (${percentage}%)</span>`;
-                    }).join(', ');
-                    
-                    return `<div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 0.15rem;">
-                      <span style="color: var(--text-grey); font-weight: 600;">${traitName}:</span>
-                      <span>${optionsList}</span>
-                    </div>`;
-                  }).join('');
-                })()}
-              </div>
-            </div>
-
-            <div class="probability-box">
-              <h4>Meta: <strong class="sparkle-gold">${store.getMatingState().stepsTarget.toLocaleString()} pasos</strong></h4>
-              <p>Viabilidad genética del embrión: <strong>${Math.round(store.getMatingState().successChance * 100)}%</strong>.</p>
-            </div>
-
-            <button class="btn btn-primary btn-hatch full-width" id="btn-save-painted-egg">
-              Colocar en la Incubadora 🥚
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Initialize Canvas drawing tools
-    this.setupCanvas();
-
-    // Hook walk zone selector buttons
-    this.container.querySelectorAll('.walk-zone-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const zone = btn.dataset.zone;
-        if (zone === this.currentWalkZone) return;
-
-        // Save canvas state
-        if (this.canvas) {
-          this.canvasBackup = document.createElement('canvas');
-          this.canvasBackup.width = this.canvas.width;
-          this.canvasBackup.height = this.canvas.height;
-          const backupCtx = this.canvasBackup.getContext('2d');
-          backupCtx.drawImage(this.canvas, 0, 0);
-        }
-
-        // Change zone
-        this.currentWalkZone = zone;
-
-        // Re-render subContent to update selectors and unlocked palettes
-        this.render();
-      });
-    });
-
-    this.container.querySelectorAll('.color-swatch').forEach(swatch => {
-      swatch.addEventListener('click', () => {
-        if (swatch.classList.contains('swatch-locked')) {
-          alert("¡Suscripción Premium requerida para desbloquear el pincel cósmico Arcoiris!");
-          return;
-        }
-
-        this.container.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('swatch-active'));
-        swatch.classList.add('swatch-active');
-
-        const color = swatch.dataset.color;
-        if (color === '#neon-rainbow') {
-          this.isPremiumBrush = true;
-        } else {
-          this.isPremiumBrush = false;
-          this.currentColor = color;
-        }
-      });
-    });
-
-    this.container.querySelector('#brush-size-slider').addEventListener('input', (e) => {
-      this.currentBrushSize = parseInt(e.target.value);
-    });
-
-    this.container.querySelector('#btn-save-painted-egg').addEventListener('click', () => {
-      const childGenetics = this.mixGenetics();
-      
-      // Store completed Egg in incubator!
-      store.addMatedEggToIncubator(childGenetics);
-      
-      // Reset paint variables
-      this.parentA = null;
-      this.parentB = null;
-      this.canvasBackup = null; // Clear backup canvas
-      
-      this.render();
-
-      alert("¡Huevo acoplado colocado con éxito! Ahora descansa en tu Incubadora. Asigna un cuidador para mantenerlo caliente y eclosionarlo.");
-    });
   }
 
   // 2. INCUBATOR MODE: Lists eggs currently incubating
@@ -492,9 +200,9 @@ export class GeneticsLab {
     if (eggs.length === 0) {
       subContentContainer.innerHTML = `
         <div class="genetics-lab-card glass-panel flex-center flex-col text-center pad-lg">
-          <div class="dna-double-helix animate-pulse">🧬</div>
-          <h2 class="section-title">Establo de Incubación (Incubadora)</h2>
-          <p class="subtitle max-width-md">No tienes huevos incubando. Completa un <strong>Ritual NFC ("La Chispa")</strong> con un amigo en el criadero, pinta el huevo y mándalo aquí para iniciar su gestación de 15 días.</p>
+          <div class="dna-double-helix animate-pulse">Huevo</div>
+          <h2 class="section-title">Incubadora</h2>
+          <p class="subtitle max-width-md">No tienes huevos incubando. Completa un <strong>Ritual NFC ("La Chispa")</strong> y el huevo pasará automáticamente a la incubadora.</p>
         </div>
       `;
       return;
@@ -503,8 +211,8 @@ export class GeneticsLab {
     subContentContainer.innerHTML = `
       <div class="genetics-lab-card glass-panel flex-col" style="gap: 1.5rem;">
         <div>
-          <h2 class="section-title">Establo de Incubación (Incubadora)</h2>
-          <p class="subtitle">Cuidar un huevo es un proceso lento (15 días de gestación). Para incubar un huevo: inyecta pasos directamente (si no tienes criaturas), o <strong>asigna un Wokamon Adulto</strong> como cuidador (¡Alimentar al cuidador le dará calor instantáneo al huevo!).</p>
+          <h2 class="section-title">Incubadora</h2>
+          <p class="subtitle">Cuidar un huevo es un proceso lento de 15 días. Asigna un Wokamon adulto como cuidador o usa pasos directamente si no tienes criaturas activas.</p>
         </div>
 
         <div class="eggs-incubation-grid">
@@ -532,7 +240,7 @@ export class GeneticsLab {
                 <div class="egg-incubation-stats">
                   <div class="progress-indicator">
                     <div class="lbl-row">
-                      <span>Período de Gestación:</span>
+                      <span>Periodo de gestación:</span>
                       <strong>${Math.floor(egg.incubationProgress)} / 15 días</strong>
                     </div>
                     <div class="progress-bar-container">
@@ -553,7 +261,7 @@ export class GeneticsLab {
                         <option value="none">-- Dejar al aire (Sin Cuidador) --</option>
                         ${adults.map(w => `
                           <option value="${w.id}" ${egg.incubatingParentId === w.id ? 'selected' : ''}>
-                            🐢 ${w.name} (Nivel ${w.level})
+                            ${w.name} (Nivel ${w.level})
                           </option>
                         `).join('')}
                       </select>
@@ -566,11 +274,11 @@ export class GeneticsLab {
                     <button class="btn btn-primary full-width btn-disabled" disabled>Eclosionando...</button>
                   ` : (egg.pointsCurrent >= egg.pointsTarget) ? `
                     <button class="btn btn-primary full-width btn-hatch-egg btn-active-glow" data-id="${egg.id}">
-                      ¡ECLOSIONAR HUEVO! 🐣
+                      Eclosionar huevo
                     </button>
                   ` : `
                     <div style="display: flex; gap: 0.4rem; width: 100%;">
-                      <button class="btn btn-secondary btn-gift-egg-action" data-id="${egg.id}" style="flex: 1;" title="Regalar Huevo a Amigo">Regalar Huevo 🎁</button>
+                      <button class="btn btn-secondary btn-gift-egg-action" data-id="${egg.id}" style="flex: 1;" title="Regalar huevo a un amigo">Regalar huevo</button>
                       <button class="btn btn-action-card btn-disabled" style="flex: 1.2;" disabled>Incubando (${Math.round((egg.pointsCurrent / egg.pointsTarget) * 100)}%)</button>
                     </div>
                   `}
@@ -604,9 +312,9 @@ export class GeneticsLab {
             overlay.className = 'payment-overlay';
             overlay.innerHTML = `
               <div class="gift-modal glass-panel pad-lg text-center flex-center flex-col animate-bounce-slow">
-                <div class="gift-giftbox animate-bounce-slow">🎁</div>
-                <h3>Huevo Genético Listo</h3>
-                <p class="subtitle">Se ha empaquetado el Huevo Gen ${egg.generation} en un código de regalo. Se ha retirado de tu incubadora y has ganado <strong class="sparkle-gold">+8 Cristales</strong>.</p>
+                <div class="gift-giftbox animate-bounce-slow">Regalo</div>
+                <h3>Huevo genético listo</h3>
+                <p class="subtitle">Se ha empaquetado el Huevo Gen ${egg.generation} en un código de regalo. Se ha retirado de tu incubadora y has ganado <strong class="sparkle-gold">+8 cristales</strong>.</p>
                 
                 <p class="lbl-info">Copia este código y envíaselo a tu amigo para que lo adopte en su incubadora:</p>
                 
@@ -615,7 +323,7 @@ export class GeneticsLab {
                 </div>
 
                 <div class="gift-actions-row flex-center">
-                  <button class="btn btn-primary" id="btn-copy-code">Copiar Código</button>
+                  <button class="btn btn-primary" id="btn-copy-code">Copiar código</button>
                   <button class="btn btn-secondary" id="btn-close-gift">Cerrar</button>
                 </div>
               </div>
@@ -628,10 +336,10 @@ export class GeneticsLab {
               document.execCommand('copy');
               
               const copyBtn = overlay.querySelector('#btn-copy-code');
-              copyBtn.textContent = '¡Copiado!';
+              copyBtn.textContent = 'Copiado';
               copyBtn.classList.add('btn-active-glow');
               setTimeout(() => {
-                copyBtn.textContent = 'Copiar Código';
+                copyBtn.textContent = 'Copiar código';
                 copyBtn.classList.remove('btn-active-glow');
               }, 1500);
             });
@@ -662,24 +370,24 @@ export class GeneticsLab {
       // Crack failure display
       subContentContainer.innerHTML = `
         <div class="genetics-lab-card glass-panel flex-center flex-col text-center pad-lg animate-slide-in" style="border: 2px dashed #ff5252;">
-          <div style="font-size: 3.5rem; margin-bottom: 0.5rem; filter: grayscale(1);">💔</div>
-          <h2 style="color: #ff5252; font-weight: 800;">¡El Cascarón se Rompió Vacío!</h2>
+          <div style="font-size: 3.5rem; margin-bottom: 0.5rem; filter: grayscale(1);">Huevo</div>
+          <h2 style="color: #ff5252; font-weight: 800;">El cascarón se rompió vacío</h2>
           
           <p class="subtitle max-width-md" style="margin: 0.5rem 0 1.25rem 0; line-height: 1.4;">
-            La caminata gestacional elegida era demasiado corta, lo que redujo la viabilidad biológica del embrión. El cascarón se ha roto vacío y no ha nacido ninguna criatura.
+            La caminata gestacional no fue suficiente para mantener la viabilidad del embrión. El cascarón se ha roto vacío y no ha nacido ninguna criatura.
           </p>
           
           <p style="font-size: 0.75rem; color: var(--text-grey); margin-bottom: 1.25rem;">
-            ¡No te preocupes! Tus Wokamons cuidadores están a salvo. Te otorgamos cristales de consolación:
+            Tus Wokamons cuidadores están a salvo. Recibes cristales de compensación:
           </p>
 
           <div class="consolation-prize-badge glass-panel-inner text-center animate-bounce-slow" style="display: flex; gap: 0.5rem; align-items: center; padding: 0.75rem 1.5rem; border-radius: 12px; border: 1.5px solid #ffd54f;">
-            <span style="font-size: 1.5rem;">💎</span>
+            <span style="font-size: 1.5rem;">Cristales</span>
             <span style="font-weight: 800; font-size: 1.1rem; color: #ffd54f;">+15 Cristales</span>
           </div>
 
           <button class="btn btn-secondary full-width" id="btn-close-failed-reveal" style="margin-top: 1.5rem; padding: 0.75rem;">
-            Limpiar el Nido y Reintentar 🍃
+            Limpiar el nido y reintentar
           </button>
         </div>
       `;
@@ -694,27 +402,27 @@ export class GeneticsLab {
     // Success Reveal display
     subContentContainer.innerHTML = `
       <div class="genetics-lab-card glass-panel flex-center flex-col text-center pad-lg animate-slide-in" style="border: 2px solid var(--primary-accent);">
-        <div class="confetti-effect">🎉 ✨ 🎈</div>
+        <div class="confetti-effect">Nuevo Wokamon</div>
         
         <div class="baby-svg" style="height: 110px; width: 110px; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border-radius: 50%; padding: 0.5rem; border: 1px solid rgba(255,255,255,0.05);">
           <div style="width: 80px; height: 80px;">${renderWokamonSVG(this.hatchedBaby)}</div>
         </div>
         
-        <h2>¡Tu Wokamon ha nacido!</h2>
+        <h2>Tu Wokamon ha nacido</h2>
         <p class="subtitle text-center" style="max-width: 350px; font-size: 0.75rem; line-height: 1.4; margin: 0.5rem 0 1rem 0;">
-          ¡Precioso! Ha nacido un Wokamon en la etapa de <strong>Niño</strong>. Ha heredado tu diseño de color y una mezcla de genes única.
+          Ha nacido un Wokamon en la etapa de <strong>Niño</strong>. Ha heredado una mezcla genética única.
         </p>
 
         <!-- Phenotypic genetics indicators -->
         <div class="hatched-traits flex-col glass-panel-inner" style="width: 100%; gap: 0.25rem; font-size: 0.68rem; text-align: left; padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 1.25rem; background: rgba(0,0,0,0.15);">
-          <span style="font-size: 0.6rem; color: var(--primary-accent); font-weight: 700; letter-spacing: 0.5px; display: block; margin-bottom: 0.2rem;">🧬 CARACTERÍSTICAS EXPRESADAS (FENOTIPO)</span>
+          <span style="font-size: 0.6rem; color: var(--primary-accent); font-weight: 700; letter-spacing: 0.5px; display: block; margin-bottom: 0.2rem;">CARACTERÍSTICAS EXPRESADAS (FENOTIPO)</span>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem;">
-            <span>• Cuerpo: <strong>${this.hatchedBaby.genetics.bodyType}</strong></span>
-            <span>• Orejas: <strong>${this.hatchedBaby.genetics.ears}</strong></span>
-            <span>• Ojos: <strong>${this.hatchedBaby.genetics.eyes}</strong></span>
-            <span>• Cuernos: <strong>${this.hatchedBaby.genetics.horns}</strong></span>
-            <span>• Alas: <strong>${this.hatchedBaby.genetics.wings}</strong></span>
-            <span>• Variabilidad: <strong style="color: var(--primary-accent);">${this.hatchedBaby.heterozygosity}%</strong></span>
+            <span>Cuerpo: <strong>${getTraitValueLabel(this.hatchedBaby.genetics.bodyType, 'bodyType')}</strong></span>
+            <span>Orejas: <strong>${getTraitValueLabel(this.hatchedBaby.genetics.ears, 'ears')}</strong></span>
+            <span>Ojos: <strong>${getTraitValueLabel(this.hatchedBaby.genetics.eyes, 'eyes')}</strong></span>
+            <span>Cuernos: <strong>${getTraitValueLabel(this.hatchedBaby.genetics.horns, 'horns')}</strong></span>
+            <span>Alas: <strong>${getTraitValueLabel(this.hatchedBaby.genetics.wings, 'wings')}</strong></span>
+            <span>Variabilidad: <strong style="color: var(--primary-accent);">${this.hatchedBaby.heterozygosity}%</strong></span>
           </div>
         </div>
 
@@ -724,7 +432,7 @@ export class GeneticsLab {
         </div>
 
         <button class="btn btn-primary full-width" id="btn-save-baby" style="margin-top: 1.25rem; padding: 0.75rem; font-weight: 700;">
-          Llevar al Criadero ❤️
+          Llevar al criadero
         </button>
       </div>
     `;
@@ -782,7 +490,7 @@ export class GeneticsLab {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
               <h3 style="font-weight: 800; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 0.35rem;">
-                📖 Colección de Rasgos Wokadex
+                Colección de rasgos Wokadex
               </h3>
               <p class="subtitle" style="font-size: 0.72rem; color: var(--text-grey);">Descubre genes y cruces raros para completar el catálogo biológico.</p>
             </div>
@@ -795,7 +503,7 @@ export class GeneticsLab {
           <!-- Loci display -->
           <div class="dex-loci-sections" style="display: flex; flex-direction: column; gap: 1.25rem;">
             ${Object.keys(allTraits).map(locus => {
-              const locusLabel = locus === 'bodyType' ? '🧬 TIPO DE CUERPO' : (locus === 'ears' ? '🐰 OREJAS' : (locus === 'eyes' ? '👀 OJOS' : (locus === 'horns' ? '⚡ CUERNOS' : '👼 ALAS')));
+              const locusLabel = locus === 'bodyType' ? 'TIPO DE CUERPO' : (locus === 'ears' ? 'OREJAS' : (locus === 'eyes' ? 'OJOS' : (locus === 'horns' ? 'CUERNOS' : 'ALAS')));
               
               return `
                 <div class="dex-locus-block">
@@ -805,18 +513,17 @@ export class GeneticsLab {
                       const unlocked = isTraitUnlocked(locus, name);
                       const isPremium = name === 'fire' || name === 'neon' || name === 'dragon';
                       
-                      let label = name.toUpperCase();
-                      if (name === 'none') label = 'NINGUNO';
+                      const label = getTraitValueLabel(name, locus).toUpperCase();
                       
                       return `
                         <div style="padding: 0.6rem; border-radius: 8px; border: 1px solid ${unlocked ? (isPremium ? 'rgba(230,81,0,0.3)' : 'rgba(255,255,255,0.06)') : 'rgba(255,255,255,0.02)'}; background: ${unlocked ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.1)'}; text-align: center; position: relative; transition: all 0.2s;">
                           ${!unlocked ? `
-                            <span style="font-size: 1.2rem; display: block; opacity: 0.25; filter: blur(1px);">🔒</span>
+                            <span style="font-size: 1.2rem; display: block; opacity: 0.25; filter: blur(1px);">?</span>
                             <span style="font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.15); display: block;">POR DESCUBRIR</span>
                           ` : `
-                            <span style="font-size: 1.2rem; display: block;">${isPremium ? '💎' : '🧬'}</span>
+                            <span style="font-size: 1.2rem; display: block;">${isPremium ? 'Raro' : 'Gen'}</span>
                             <span style="font-size: 0.65rem; font-weight: 800; color: ${isPremium ? '#ffb74d' : '#fff'}; display: block;">${label}</span>
-                            <span style="font-size: 0.5rem; color: var(--text-grey); display: block; text-transform: capitalize;">${isPremium ? 'Rasgo Premium' : 'Rasgo Común'}</span>
+                            <span style="font-size: 0.5rem; color: var(--text-grey); display: block; text-transform: capitalize;">${isPremium ? 'Rasgo premium' : 'Rasgo común'}</span>
                           `}
                         </div>
                       `;
@@ -828,27 +535,27 @@ export class GeneticsLab {
           </div>
         </div>
 
-        <!-- Bitácora de Actividades (Activity Logs) -->
+        <!-- Bitácora de actividades -->
         <div class="glass-panel" style="padding: 1.5rem;">
           <h3 style="font-weight: 800; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.25rem;">
-            📜 Bitácora de Actividades del Criadero
+            Bitácora de actividades del criadero
           </h3>
           <p class="subtitle" style="font-size: 0.72rem; color: var(--text-grey); margin-bottom: 1rem;">Registro histórico de tus caminatas, apareamientos, eclosiones y cuidados de salud.</p>
           
           <div class="logs-timeline" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 300px; overflow-y: auto; padding-right: 0.5rem; background: rgba(0,0,0,0.15); padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.03);">
             ${logs.length === 0 ? `
               <div style="text-align: center; color: var(--text-grey); padding: 1.5rem 0; font-size: 0.75rem;">
-                No hay registros aún. ¡Simula caminar, alimenta a tu criatura o haz un cruce!
+                No hay registros aún. Simula caminar, alimenta a tu criatura o haz un cruce.
               </div>
             ` : logs.map(log => {
-              let icon = '📢';
-              if (log.type === 'WALK') icon = '🔋';
-              else if (log.type === 'FEED') icon = '🍖';
-              else if (log.type === 'BREED') icon = '🧬';
-              else if (log.type === 'HATCH') icon = '🐣';
-              else if (log.type === 'GIFT') icon = '🎁';
-              else if (log.type === 'CLAIM') icon = '✨';
-              else if (log.type === 'SHOP_BUY') icon = '💎';
+              let icon = '•';
+              if (log.type === 'WALK') icon = 'Pasos';
+              else if (log.type === 'FEED') icon = 'Comida';
+              else if (log.type === 'BREED') icon = 'Cruce';
+              else if (log.type === 'HATCH') icon = 'Huevo';
+              else if (log.type === 'GIFT') icon = 'Regalo';
+              else if (log.type === 'CLAIM') icon = 'Recibido';
+              else if (log.type === 'SHOP_BUY') icon = 'Tienda';
               
               return `
                 <div style="display: flex; gap: 0.5rem; font-size: 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 0.35rem; align-items: flex-start;">
@@ -925,3 +632,4 @@ export class GeneticsLab {
     } catch(e) {}
   }
 }
+
