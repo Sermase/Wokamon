@@ -1,4 +1,4 @@
-﻿// Wokamon Evolucionado - Home screen, step sync and day controls
+// Wokamon Evolucionado - Home screen, step sync and day controls
 
 import store from '../utils/state.js';
 import { renderWokamonSVG } from './WokamonRenderer.js';
@@ -162,8 +162,8 @@ export class StepSimulator {
     const activeWokamon = getFeaturedWokamon(wokamons);
     const progressPercent = Math.min(100, (user.stepsToday / DAILY_HEALTH_GOAL) * 100);
     const isLimitReached = !user.isPremium && user.stepsToday >= DAILY_FREE_LIMIT;
-    const canFeed = activeWokamon && activeWokamon.status !== 'dead' && user.totalEnergy >= FEED_COST;
-    const canTrain = activeWokamon && activeWokamon.status !== 'dead' && user.totalEnergy >= TRAIN_COST;
+    const canFeed = activeWokamon && activeWokamon.status !== 'dead' && activeWokamon.hunger < 100 && user.totalEnergy >= FEED_COST;
+    const canTrain = activeWokamon && activeWokamon.status !== 'dead' && activeWokamon.hunger < 100 && user.totalEnergy >= TRAIN_COST;
     const hunger = activeWokamon ? Math.round(activeWokamon.hunger ?? 100) : 0;
     const dailyNeed = activeWokamon?.dailyStepNeed || DAILY_HEALTH_GOAL;
 
@@ -173,17 +173,17 @@ export class StepSimulator {
           <div class="resource-item">
             <span class="resource-label">Hoy</span>
             <strong>${user.stepsToday.toLocaleString()}</strong>
-            <span class="resource-bar blue"><span style="width: ${progressPercent}%"></span></span>
+            <span class="resource-bar blue-bar"><span style="width: ${progressPercent}%"></span></span>
           </div>
           <div class="resource-item">
             <span class="resource-label">Disponibles</span>
             <strong>${user.totalEnergy.toLocaleString()}</strong>
-            <span class="resource-bar"><span style="width: ${Math.min(100, user.totalEnergy / 20)}%"></span></span>
+            <span class="resource-bar orange-bar"><span style="width: ${Math.min(100, (user.totalEnergy / 10000) * 100)}%"></span></span>
           </div>
           <div class="resource-item">
             <span class="resource-label">Cristales</span>
             <strong>${user.crystals.toLocaleString()}</strong>
-            <span class="resource-bar gem-bar"><span style="width: ${Math.min(100, user.crystals * 2)}%"></span></span>
+            <span class="resource-bar purple-bar"><span style="width: ${Math.min(100, (user.crystals / 1000) * 100)}%"></span></span>
           </div>
         </div>
 
@@ -214,15 +214,6 @@ export class StepSimulator {
             <p>Sincroniza o suma tus primeros pasos para atraer a tu primer Wokamon.</p>
           </div>
         `}
-
-        <div class="home-gauge">
-          <svg viewBox="0 0 220 130" aria-hidden="true">
-            <path class="gauge-bg" d="M35 105 A75 75 0 0 1 185 105" />
-            <path class="gauge-fill" d="M35 105 A75 75 0 0 1 185 105" pathLength="100" style="stroke-dasharray: ${progressPercent} 100" />
-          </svg>
-          <div class="gauge-number">${user.stepsToday.toLocaleString()}</div>
-          <div class="gauge-label">Meta sana: ${DAILY_HEALTH_GOAL.toLocaleString()} pasos</div>
-        </div>
 
         <div class="home-actions-row">
           <button class="btn home-action-btn" id="btn-home-feed" ${!canFeed ? 'disabled' : ''}>

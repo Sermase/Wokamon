@@ -1,4 +1,4 @@
-﻿// Wokamon Evolucionado - Global State Management (Mendelian Genetics & Firebase Cloud Edition)
+// Wokamon Evolucionado - Global State Management (Mendelian Genetics & Firebase Cloud Edition)
 
 import { auth, db } from './firebase.js';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
@@ -180,6 +180,15 @@ export function getPhenotype(genotype) {
     }
   }
   return phenotype;
+}
+
+export function getAlleleForName(locus, name) {
+  for (const allele in ALLELES_DOMINANCE[locus]) {
+    if (ALLELES_DOMINANCE[locus][allele].name === name) {
+      return allele;
+    }
+  }
+  return null;
 }
 
 // Calculate the percentage of Heterozygous Loci (genetic heterogeneity)
@@ -710,7 +719,7 @@ class GameState {
       return wokamon;
     }
 
-    if (wokamon.age >= Math.floor(lifespan * 0.75) || wokamon.level >= 10) {
+    if (wokamon.age >= Math.floor(lifespan * 0.75)) {
       wokamon.stage = 'Anciano';
     } else if (wokamon.age >= 7 || wokamon.level >= 3) {
       wokamon.stage = 'Adulto';
@@ -796,6 +805,7 @@ class GameState {
   feedWokamon(id, energyAmount) {
     const wokamon = this.wokamons.find(w => w.id === id);
     if (!wokamon || wokamon.status === 'dead') return false;
+    if (wokamon.hunger >= 100) return false;
 
     if (this.userStats.totalEnergy < energyAmount) return false;
 
@@ -883,6 +893,9 @@ class GameState {
 
     const parent = this.wokamons.find(w => w.id === parentId);
     if (!parent || parent.status === 'dead' || parent.stage === 'Niño') return false;
+
+    const isAlreadyIncubating = this.eggs.some(e => e.id !== eggId && e.incubatingParentId === parentId);
+    if (isAlreadyIncubating) return false;
 
     egg.incubatingParentId = parentId;
     this.logActivity('BREED', `Asignaste a ${parent.name} para incubar el huevo.`);
@@ -1219,6 +1232,47 @@ class GameState {
     return false;
   }
 
+  modifyGenotype(targetId, targetType, locus, alleleIndex, newAllele, crystalCost) {
+    if (this.userStats.crystals < crystalCost) return false;
+    
+    let target = null;
+    if (targetType === 'wokamon') {
+      target = this.wokamons.find(w => w.id === targetId);
+    } else {
+      target = this.eggs.find(e => e.id === targetId);
+    }
+    if (!target || target.status === 'dead') return false;
+
+    // CRISPR Gene Mutation Swap
+    target.genotype[locus][alleleIndex] = newAllele;
+    
+    // Recalculate Phenotype and Heterozygosity based on new Genotype
+    const phenotype = getPhenotype(target.genotype);
+    target.heterozygosity = getHeterozygosity(target.genotype);
+    
+    if (targetType === 'wokamon') {
+      target.genetics.bodyType = phenotype.bodyType;
+      target.genetics.ears = phenotype.ears;
+      target.genetics.eyes = phenotype.eyes;
+      target.genetics.horns = phenotype.horns;
+      target.genetics.wings = phenotype.wings;
+      this.normalizeWokamonLifecycle(target);
+      this.logActivity('SHOP_BUY', `Modificación CRISPR: Se editó el genoma de ${target.name} (locus ${locus}).`);
+    } else {
+      // Egg genetics
+      target.genetics.bodyType = phenotype.bodyType;
+      target.genetics.ears = phenotype.ears;
+      target.genetics.eyes = phenotype.eyes;
+      target.genetics.horns = phenotype.horns;
+      target.genetics.wings = phenotype.wings;
+      this.logActivity('SHOP_BUY', `Modificación CRISPR: Se editó el embrión de ${target.name} (alelo ${newAllele}).`);
+    }
+
+    this.userStats.crystals -= crystalCost;
+    this.saveAll();
+    return true;
+  }
+
   settleDailyCareIfNeeded(now = new Date()) {
     if (!this.activeUser) return { settled: false, daysAdvanced: 0 };
 
@@ -1264,7 +1318,7 @@ class GameState {
     const stepsUsed = Math.min(availableSteps, totalDailyNeed);
     const coverageRatio = totalDailyNeed > 0 ? Math.min(1, stepsUsed / totalDailyNeed) : 1;
     this.recordStepHistory(this.userStats.stepsToday || 0, stepsUsed);
-    this.userStats.totalEnergy = Math.max(0, availableSteps - stepsUsed);
+    this.userStats.totalEnergy = 0;
     this.userStats.stepsToday = 0;
 
     this.wokamons.forEach(wokamon => {
