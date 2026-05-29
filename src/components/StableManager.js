@@ -1,6 +1,6 @@
 // Wokamon Evolucionado - Simple nursery list with detail view
 
-import store, { getTraitValueLabel, getWokamonScale } from '../utils/state.js';
+import store, { getTraitValueLabel, getWokamonScale, ALLELES_DOMINANCE } from '../utils/state.js';
 import { renderWokamonSVG } from './WokamonRenderer.js';
 
 const FEED_COST = 150;
@@ -43,7 +43,7 @@ export class StableManager {
     const user = store.getUser();
     const scale = getWokamonScale(wokamon.genotype);
     const sizeName = scale === 1.25 ? 'Grande' : (scale === 0.85 ? 'Pequeño' : 'Mediano');
-    const canFeed = wokamon.status !== 'dead' && user.totalEnergy >= FEED_COST;
+    const canFeed = wokamon.status !== 'dead' && wokamon.hunger < 100 && user.totalEnergy >= FEED_COST;
     const canCure = wokamon.status !== 'dead' && user.crystals >= 10;
 
     const overlay = document.createElement('div');
@@ -81,14 +81,50 @@ export class StableManager {
           ${this.renderBar('Crecimiento', wokamon.growth, 'bar-blue')}
         </div>
 
-        <div class="detail-traits glass-panel-inner">
-          <strong>Rasgos visibles</strong>
-          <div>
-            <span>Cuerpo: ${getTraitValueLabel(wokamon.genetics.bodyType, 'bodyType')}</span>
-            <span>Orejas: ${getTraitValueLabel(wokamon.genetics.ears, 'ears')}</span>
-            <span>Ojos: ${getTraitValueLabel(wokamon.genetics.eyes, 'eyes')}</span>
-            <span>Cuernos: ${getTraitValueLabel(wokamon.genetics.horns, 'horns')}</span>
-            <span>Alas: ${getTraitValueLabel(wokamon.genetics.wings, 'wings')}</span>
+        <div class="detail-traits glass-panel-inner" style="padding: 1.15rem; gap: 0.85rem; display: flex; flex-direction: column;">
+          <strong style="font-size: 0.85rem; color: var(--text-white); display: flex; align-items: center; justify-content: space-between;">
+            🧬 Mapa Genómico del Wokamon
+            <span style="font-size: 0.65rem; color: var(--primary-accent); font-weight: 700;">MENDELIAN ANALYSIS</span>
+          </strong>
+          
+          <div class="mendelian-table">
+            <div class="table-header">
+              <span>Locus <span class="help-btn" data-help="Locus: La posición física de un gen o secuencia de ADN en un cromosoma.">?</span></span>
+              <span>Alelos <span class="help-btn" data-help="Alelo: Cada una de las formas alternativas que puede tener un mismo gen, heredadas de los padres.">?</span></span>
+              <span>Fenotipo (Visible) <span class="help-btn" data-help="Fenotipo: La expresión física observable de los alelos dominantes.">?</span></span>
+              <span>Oculto (Recesivo) <span class="help-btn" data-help="Alelo Recesivo: Gen que queda oculto y enmascarado en presencia de un alelo dominante.">?</span></span>
+            </div>
+            
+            <div class="table-body">
+              ${['bodyType', 'ears', 'eyes', 'horns', 'wings'].map(locus => {
+                const locusLabels = { bodyType: 'Cuerpo', ears: 'Orejas', eyes: 'Ojos', horns: 'Cuernos', wings: 'Alas' };
+                const genotype = wokamon.genotype[locus];
+                const alleleA = genotype[0];
+                const alleleB = genotype[1];
+                
+                const infoA = ALLELES_DOMINANCE[locus][alleleA];
+                const infoB = ALLELES_DOMINANCE[locus][alleleB];
+
+                const isA_Dominant = infoA.dominance >= infoB.dominance;
+                const domAllele = isA_Dominant ? alleleA : alleleB;
+                const recAllele = isA_Dominant ? alleleB : alleleA;
+                
+                const isHomozygous = alleleA === alleleB;
+                const domLabel = getTraitValueLabel(ALLELES_DOMINANCE[locus][domAllele].name, locus);
+                const recLabel = isHomozygous 
+                  ? '<span class="homo-badge">Homocigoto</span>' 
+                  : getTraitValueLabel(ALLELES_DOMINANCE[locus][recAllele].name, locus);
+
+                return `
+                  <div class="table-row">
+                    <strong class="locus-lbl">${locusLabels[locus]}</strong>
+                    <span class="alleles-seq">[ ${alleleA} / ${alleleB} ]</span>
+                    <span class="pheno-val">${domLabel}</span>
+                    <span class="hidden-val">${recLabel}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
           </div>
         </div>
 
@@ -97,8 +133,8 @@ export class StableManager {
             <button class="btn btn-danger-outline" id="btn-release-detail">Memorializar</button>
           ` : `
             <button class="btn btn-primary" id="btn-feed-detail" ${!canFeed ? 'disabled' : ''}>Alimentar (-${FEED_COST} pasos)</button>
-            <button class="btn btn-secondary" id="btn-cure-detail" ${!canCure ? 'disabled' : ''}>Medicina (-10 cristales)</button>
-            <button class="btn btn-danger-outline" id="btn-release-detail">Soltar</button>
+            <button class="btn btn-secondary" id="btn-crispr-detail">🧬 Lab CRISPR</button>
+            <button class="btn btn-danger-outline" id="btn-release-detail" style="padding: 0.6rem 0.8rem;">Soltar</button>
           `}
         </div>
       </div>
@@ -110,6 +146,49 @@ export class StableManager {
     overlay.addEventListener('click', (event) => {
       if (event.target === overlay) overlay.remove();
     });
+
+    // Hook Help buttons for real genomic explanations
+    overlay.querySelectorAll('.help-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = btn.dataset.help;
+        const helpOverlay = document.createElement('div');
+        helpOverlay.className = 'genetic-help-popup animate-fade-in';
+        helpOverlay.innerHTML = `
+          <div class="help-popup-content glass-panel-inner pad-md text-center flex-center flex-col" style="max-width: 280px; gap: 0.5rem; background: rgba(255, 255, 255, 0.98); border: 2px solid var(--primary-accent); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <h4 style="font-weight: 800; color: var(--primary-accent); margin-bottom: 0.15rem;">Genética de Wokamon</h4>
+            <p style="font-size: 0.72rem; line-height: 1.4; color: var(--text-white); font-weight: 500; text-align: left; margin: 0.25rem 0;">${text}</p>
+            <button class="btn btn-secondary btn-xs" id="btn-close-help" style="width: 100%; padding: 0.4rem; font-weight: 700; margin-top: 0.25rem;">Cerrar</button>
+          </div>
+        `;
+        document.body.appendChild(helpOverlay);
+        
+        helpOverlay.querySelector('#btn-close-help').addEventListener('click', () => helpOverlay.remove());
+        helpOverlay.addEventListener('click', () => helpOverlay.remove());
+      });
+    });
+
+    // CRISPR engineering tab redirect
+    const crisprBtn = overlay.querySelector('#btn-crispr-detail');
+    if (crisprBtn) {
+      crisprBtn.addEventListener('click', () => {
+        overlay.remove();
+        const labTab = document.getElementById('nav-tab-incubator');
+        if (labTab) {
+          labTab.click();
+          // Dispatch subtab redirect event
+          setTimeout(() => {
+            const crisprSubTab = document.getElementById('btn-subtab-crispr');
+            if (crisprSubTab) {
+              crisprSubTab.click();
+            } else {
+              // Fallback: search and dispatch click on subtab in GeneticsLab
+              window.dispatchEvent(new CustomEvent('switch-to-crispr-lab'));
+            }
+          }, 150);
+        }
+      });
+    }
 
     const feedBtn = overlay.querySelector('#btn-feed-detail');
     if (feedBtn) {

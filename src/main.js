@@ -1,4 +1,4 @@
-﻿// Wokamon Evolucionado - Main Entry Point and Orchestrator
+// Wokamon Evolucionado - Main Entry Point and Orchestrator
 
 import store from './utils/state.js';
 import { StepSimulator } from './components/StepSimulator.js';
@@ -192,53 +192,39 @@ document.addEventListener('DOMContentLoaded', () => {
 // Helper: Real-time Header Statistics updates
 function updateHeaderStats(state) {
   const user = state.user;
-  
-  const stepsNode = document.querySelector('#header-stat-steps .val');
-  const energyNode = document.querySelector('#header-stat-energy .val');
-  const crystalsNode = document.querySelector('#header-stat-crystals .val');
-  const premiumIndicator = document.getElementById('header-premium-indicator');
-  const usernameDisplay = document.getElementById('header-username-display');
+  const userContainer = document.getElementById('header-user-container');
 
-  if (stepsNode) {
-    stepsNode.textContent = user.isPremium
-      ? user.stepsToday.toLocaleString() + ' (sin límite)'
-      : user.stepsToday.toLocaleString() + ' / 10.000';
-  }
-  
-  if (energyNode) {
-    energyNode.textContent = user.totalEnergy.toLocaleString();
-  }
-
-  if (crystalsNode) {
-    crystalsNode.textContent = user.crystals.toLocaleString();
-  }
-
-  if (premiumIndicator) {
-    if (user.isPremium) {
-      premiumIndicator.textContent = 'PREMIUM';
-      premiumIndicator.className = 'header-premium-indicator premium';
-    } else {
-      premiumIndicator.textContent = 'FREE';
-      premiumIndicator.className = 'header-premium-indicator free';
-    }
-  }
-
-  if (usernameDisplay) {
+  if (userContainer) {
     if (store.currentUser) {
-      const avatar = store.currentUserPhoto
-        ? `<img src="${store.currentUserPhoto}" alt="" style="width: 18px; height: 18px; border-radius: 999px; vertical-align: middle; margin-right: 0.35rem;">`
-        : '';
-      usernameDisplay.innerHTML = `${avatar}Cuenta: <strong>${store.currentUser}</strong> <span id="btn-header-signout" style="color: #ff5252; cursor: pointer; margin-left: 0.75rem; text-decoration: underline; font-weight: 400;">[Salir]</span>`;
-      usernameDisplay.style.display = 'block';
+      const initial = store.currentUser.charAt(0).toUpperCase();
+      const avatarHtml = store.currentUserPhoto
+        ? `<img src="${store.currentUserPhoto}" alt="" class="avatar-img">`
+        : `<span class="avatar-initial">${initial}</span>`;
       
-      const signOutBtn = usernameDisplay.querySelector('#btn-header-signout');
+      const premiumBadge = user.isPremium 
+        ? `<span class="user-premium-badge">PREMIUM</span>` 
+        : ``;
+
+      userContainer.innerHTML = `
+        <div class="header-user-badge">
+          <div class="user-info">
+            <span class="user-name">${store.currentUser} ${premiumBadge}</span>
+            <span id="btn-header-signout" class="signout-link">[Salir]</span>
+          </div>
+          <div class="user-avatar-dot">
+            ${avatarHtml}
+          </div>
+        </div>
+      `;
+
+      const signOutBtn = userContainer.querySelector('#btn-header-signout');
       if (signOutBtn) {
         signOutBtn.addEventListener('click', () => {
           store.signOut();
         });
       }
     } else {
-      usernameDisplay.style.display = 'none';
+      userContainer.innerHTML = '';
     }
   }
 }

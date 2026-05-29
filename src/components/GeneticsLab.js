@@ -1,6 +1,6 @@
 // Wokamon Evolucionado - Egg Painter & Genetics Laboratory Component
 
-import store, { calculatePunnettSquare, getTraitValueLabel } from '../utils/state.js';
+import store, { calculatePunnettSquare, getTraitValueLabel, ALLELES_DOMINANCE } from '../utils/state.js';
 import { renderWokamonSVG } from './WokamonRenderer.js';
 
 export class GeneticsLab {
@@ -35,6 +35,12 @@ export class GeneticsLab {
       this.parentA = null;
       this.parentB = null;
       this.activeSubTab = 'lab';
+      this.render();
+    });
+
+    // Custom switch to CRISPR event
+    window.addEventListener('switch-to-crispr-lab', () => {
+      this.activeSubTab = 'crispr';
       this.render();
     });
 
@@ -96,8 +102,7 @@ export class GeneticsLab {
   render() {
     if (!this.container) return;
 
-    if (this.lockedMode) {
-      this.activeSubTab = this.lockedMode === 'dex' ? 'dex' : 'lab';
+    if (this.lockedMode === 'dex') {
       this.container.innerHTML = `
         <div class="genetics-lab-panel">
           <div id="lab-subpanel-content"></div>
@@ -105,20 +110,12 @@ export class GeneticsLab {
       `;
 
       const subContent = this.container.querySelector('#lab-subpanel-content');
-      if (this.activeSubTab === 'lab') {
-        if (this.hatchedBaby) {
-          this.renderHatchRevealMode(subContent);
-        } else {
-          this.renderIncubatorMode(subContent);
-        }
-      } else {
-        this.renderDexAndLogsMode(subContent);
-      }
+      this.renderDexAndLogsMode(subContent);
       return;
     }
 
-    // Set default subtab
-    if (!this.activeSubTab) {
+    // Set default subtab for incubator panel
+    if (this.activeSubTab !== 'crispr') {
       this.activeSubTab = 'lab';
     }
 
@@ -130,10 +127,10 @@ export class GeneticsLab {
         <!-- Lab Inner Tabs navigation -->
         <div class="lab-inner-nav glass-panel" style="display: flex; gap: 0.5rem; padding: 0.5rem; border-radius: 12px; margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.02);">
           <button class="btn btn-secondary btn-xs flex-center" id="btn-subtab-lab" style="flex: 1; padding: 0.6rem; gap: 0.35rem; font-weight: 700; border-radius: 8px;">
-            <span>Huevos</span> Incubadora (${eggs.length})
+            <span>🥚 Huevos</span> Incubadora (${eggs.length})
           </button>
-          <button class="btn btn-secondary btn-xs flex-center" id="btn-subtab-dex" style="flex: 1; padding: 0.6rem; gap: 0.35rem; font-weight: 700; border-radius: 8px;">
-            <span>Dex</span> Wokadex y Bitácora
+          <button class="btn btn-secondary btn-xs flex-center" id="btn-subtab-crispr" style="flex: 1; padding: 0.6rem; gap: 0.35rem; font-weight: 700; border-radius: 8px;">
+            <span>🧬 CRISPR</span> Lab Genético
           </button>
         </div>
 
@@ -143,7 +140,7 @@ export class GeneticsLab {
 
     // Hook tab click events
     const labBtn = this.container.querySelector('#btn-subtab-lab');
-    const dexBtn = this.container.querySelector('#btn-subtab-dex');
+    const crisprBtn = this.container.querySelector('#btn-subtab-crispr');
     
     const updateSubTabStyles = () => {
       if (this.activeSubTab === 'lab') {
@@ -151,13 +148,13 @@ export class GeneticsLab {
         labBtn.style.color = '#fff';
         labBtn.style.borderColor = 'var(--primary-accent)';
 
-        dexBtn.style.background = 'transparent';
-        dexBtn.style.color = 'var(--text-grey)';
-        dexBtn.style.borderColor = 'rgba(255,255,255,0.05)';
+        crisprBtn.style.background = 'transparent';
+        crisprBtn.style.color = 'var(--text-grey)';
+        crisprBtn.style.borderColor = 'rgba(255,255,255,0.05)';
       } else {
-        dexBtn.style.background = 'var(--primary-accent)';
-        dexBtn.style.color = '#fff';
-        dexBtn.style.borderColor = 'var(--primary-accent)';
+        crisprBtn.style.background = 'var(--primary-accent)';
+        crisprBtn.style.color = '#fff';
+        crisprBtn.style.borderColor = 'var(--primary-accent)';
 
         labBtn.style.background = 'transparent';
         labBtn.style.color = 'var(--text-grey)';
@@ -170,8 +167,8 @@ export class GeneticsLab {
       this.render();
     });
 
-    dexBtn.addEventListener('click', () => {
-      this.activeSubTab = 'dex';
+    crisprBtn.addEventListener('click', () => {
+      this.activeSubTab = 'crispr';
       this.render();
     });
 
@@ -186,7 +183,7 @@ export class GeneticsLab {
         this.renderIncubatorMode(subContent);
       }
     } else {
-      this.renderDexAndLogsMode(subContent);
+      this.renderCrisprMode(subContent);
     }
   }
 
@@ -249,22 +246,32 @@ export class GeneticsLab {
                   </div>
 
                   <!-- Assign sitting parent Wokamon -->
-                  <div class="parent-caregiver-dropdown" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                  <div class="parent-caregiver-slot" style="display: flex; flex-direction: column; gap: 0.25rem;">
                     <span style="font-size: 0.65rem; color: var(--text-grey); font-weight: 700;">WOKAMON CUIDADOR (DA CALOR):</span>
                     
                     ${this.isHatching ? `
-                      <select class="glass-select" disabled>
-                        <option>${parentCare ? parentCare.name : 'Ninguno asignado'}</option>
-                      </select>
+                      <button class="btn btn-secondary btn-xs flex-center btn-disabled" disabled style="width: 100%; padding: 0.5rem; justify-content: space-between; align-items: center; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                          <div style="width: 28px; height: 28px; background: rgba(0,0,0,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.06);">
+                            <div style="width: 22px; height: 22px;">${parentCare ? renderWokamonSVG(parentCare) : ''}</div>
+                          </div>
+                          <span style="font-weight: 700; font-size: 0.72rem; color: #fff;">${parentCare ? parentCare.name : 'Ninguno asignado'}</span>
+                        </div>
+                      </button>
+                    ` : parentCare ? `
+                      <button class="btn btn-secondary btn-xs flex-center btn-open-caregiver-modal" data-egg-id="${egg.id}" style="width: 100%; padding: 0.5rem; justify-content: space-between; align-items: center; border-radius: 8px; border: 1.2px solid rgba(0, 131, 143, 0.2);">
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                          <div style="width: 28px; height: 28px; background: rgba(0,0,0,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.06);">
+                            <div style="width: 22px; height: 22px;">${renderWokamonSVG(parentCare)}</div>
+                          </div>
+                          <span style="font-weight: 700; font-size: 0.72rem; color: #fff;">${parentCare.name} (Lvl ${parentCare.level})</span>
+                        </div>
+                        <span style="font-size: 0.6rem; color: var(--primary-accent); font-weight: 800;">[ CAMBIAR ]</span>
+                      </button>
                     ` : `
-                      <select class="glass-select select-caregiver" data-egg-id="${egg.id}">
-                        <option value="none">-- Dejar al aire (Sin Cuidador) --</option>
-                        ${adults.map(w => `
-                          <option value="${w.id}" ${egg.incubatingParentId === w.id ? 'selected' : ''}>
-                            ${w.name} (Nivel ${w.level})
-                          </option>
-                        `).join('')}
-                      </select>
+                      <button class="btn btn-secondary btn-xs flex-center btn-open-caregiver-modal" data-egg-id="${egg.id}" style="width: 100%; padding: 0.6rem; justify-content: center; align-items: center; border-radius: 8px; border: 1.5px dashed rgba(0, 131, 143, 0.25); background: rgba(0, 131, 143, 0.02); color: var(--primary-accent); font-weight: 800; transition: all 0.2s;">
+                        ➕ ASIGNAR CUIDADOR ADULTO
+                      </button>
                     `}
                   </div>
                 </div>
@@ -290,12 +297,106 @@ export class GeneticsLab {
       </div>
     `;
 
-    // Hook caregiver assignments
-    subContentContainer.querySelectorAll('.select-caregiver').forEach(select => {
-      select.addEventListener('change', (e) => {
-        const eggId = select.dataset.eggId;
-        const parentId = e.target.value;
-        store.assignParentToEgg(eggId, parentId);
+    // Hook caregiver assignments modal trigger
+    subContentContainer.querySelectorAll('.btn-open-caregiver-modal').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const eggId = btn.dataset.eggId;
+        const egg = eggs.find(e => e.id === eggId);
+        if (!egg) return;
+
+        const adults = store.getWokamons().filter(w => w.status !== 'dead' && (w.stage === 'Adulto' || w.stage === 'Anciano'));
+
+        // Show a custom, gorgeous modal with thumbnails!
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'payment-overlay animate-fade-in';
+        modalOverlay.innerHTML = `
+          <div class="gift-modal glass-panel pad-lg text-center flex-center flex-col animate-bounce-slow" style="max-width: 380px; width: 90%; gap: 1rem; border: 2.5px solid var(--primary-accent); padding: 1.5rem; background: rgba(255,255,255,0.98); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);">
+            <div style="font-size: 2.5rem; filter: drop-shadow(0 0 8px rgba(0, 131, 143, 0.4));">🧬</div>
+            <div>
+              <h3 style="font-weight: 800; color: var(--primary-accent); margin-bottom: 0.25rem;">Asignar Wokamon Cuidador</h3>
+              <p style="font-size: 0.72rem; color: #263238; line-height: 1.4; margin-top: 0.2rem; text-align: left;">
+                Los Wokamons adultos y ancianos dan calor al huevo con sus pasos para acelerar su gestación. Solo pueden cuidar de un huevo a la vez.
+              </p>
+            </div>
+
+            <!-- List caretakers -->
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto; padding-right: 0.25rem;">
+              ${adults.length === 0 ? `
+                <div style="padding: 1rem; border-radius: 8px; border: 1.5px dashed rgba(0,131,143,0.15); background: rgba(0,0,0,0.05); font-size: 0.72rem; color: var(--text-grey); text-align: center;">
+                  No tienes Wokamons adultos o ancianos disponibles en tu criadero. ¡Sigue cuidando a tus Wokamons niños hasta que crezcan!
+                </div>
+              ` : adults.map(w => {
+                const isBusy = eggs.some(e => e.id !== egg.id && e.incubatingParentId === w.id);
+                const isCurrent = egg.incubatingParentId === w.id;
+                
+                return `
+                  <button class="btn btn-secondary flex-center select-wokamon-card" 
+                          data-wok-id="${w.id}" 
+                          ${isBusy ? 'disabled' : ''} 
+                          style="width: 100%; padding: 0.65rem; border-radius: 10px; border: 1.5px solid ${isCurrent ? 'var(--primary-accent)' : (isBusy ? 'rgba(0,0,0,0.02)' : 'rgba(0,131,143,0.12)')}; background: ${isCurrent ? 'rgba(0, 131, 143, 0.08)' : (isBusy ? 'rgba(0,0,0,0.05)' : '#fff')}; display: flex; align-items: center; justify-content: space-between; text-align: left; transition: all 0.2s; cursor: ${isBusy ? 'not-allowed' : 'pointer'};">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                      <!-- Visual Thumbnail -->
+                      <div style="width: 36px; height: 36px; background: rgba(0,0,0,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,131,143,0.1); flex-shrink: 0;">
+                        <div style="width: 28px; height: 28px;">${renderWokamonSVG(w)}</div>
+                      </div>
+                      <div style="display: flex; flex-direction: column;">
+                        <strong style="font-size: 0.78rem; color: ${isBusy ? '#777' : 'var(--text-white)'};">${w.name}</strong>
+                        <span style="font-size: 0.58rem; color: var(--text-grey); font-weight: 700; text-transform: uppercase;">
+                          ${w.stage} • Nivel ${w.level}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      ${isCurrent ? `
+                        <span class="zygo-badge badge-homo" style="font-size: 0.52rem; padding: 0.2rem 0.4rem;">Cuidando</span>
+                      ` : isBusy ? `
+                        <span style="font-size: 0.52rem; color: rgba(0,0,0,0.25); font-weight: 800; text-transform: uppercase;">Ocupado</span>
+                      ` : `
+                        <span style="font-size: 0.52rem; color: var(--primary-accent); font-weight: 800; text-transform: uppercase;">Asignar</span>
+                      `}
+                    </div>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Remove Caretaker Button -->
+            <button class="btn btn-secondary-outline btn-remove-caretaker" style="width: 100%; padding: 0.6rem; border-radius: 8px; font-size: 0.72rem; font-weight: 700; border-color: var(--danger-accent); color: var(--danger-accent);">
+              Dejar al aire (Sin Cuidador)
+            </button>
+
+            <!-- Cancel Button -->
+            <button class="btn btn-secondary full-width btn-close-caretakers" style="padding: 0.6rem; border-radius: 8px; font-size: 0.72rem; font-weight: 700; background: rgba(0,0,0,0.05); color: var(--text-white); border-color: rgba(0,0,0,0.05);">
+              Cancelar
+            </button>
+          </div>
+        `;
+
+        document.body.appendChild(modalOverlay);
+
+        // Cancel
+        modalOverlay.querySelector('.btn-close-caretakers').addEventListener('click', () => {
+          modalOverlay.remove();
+        });
+
+        // Set to none
+        modalOverlay.querySelector('.btn-remove-caretaker').addEventListener('click', () => {
+          store.assignParentToEgg(eggId, 'none');
+          modalOverlay.remove();
+          this.render();
+        });
+
+        // Select Wokamon
+        modalOverlay.querySelectorAll('.select-wokamon-card').forEach(card => {
+          card.addEventListener('click', () => {
+            const wokId = card.dataset.wokId;
+            store.assignParentToEgg(eggId, wokId);
+            this.playHatchTick(330);
+            modalOverlay.remove();
+            this.render();
+          });
+        });
       });
     });
 
@@ -572,6 +673,325 @@ export class GeneticsLab {
 
       </div>
     `;
+  }
+
+  renderCrisprMode(subContentContainer) {
+    const eggs = store.getEggs();
+    const allTargets = eggs.map(e => ({ id: e.id, name: `🥚 ${e.name} [Huevo Gen ${e.generation}]`, type: 'egg', obj: e }));
+
+    if (allTargets.length === 0) {
+      subContentContainer.innerHTML = `
+        <div class="genetics-lab-card glass-panel flex-center flex-col text-center pad-lg">
+          <div class="dna-double-helix animate-pulse" style="font-size: 3rem; margin-bottom: 1rem;">🧬</div>
+          <h2 class="section-title">Laboratorio CRISPR-Cas9</h2>
+          <p class="subtitle max-width-md">No tienes huevos activos en la incubadora para realizar ingeniería genética. Completa un apareamiento en el Ritual NFC para conseguir un huevo gestacional y editar su ADN antes de que eclosione.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Set or validate selected target
+    let activeTarget = allTargets.find(t => t.id === this.selectedTargetId && t.type === this.selectedTargetType);
+    if (!activeTarget) {
+      activeTarget = allTargets[0];
+      this.selectedTargetId = activeTarget.id;
+      this.selectedTargetType = activeTarget.type;
+    }
+
+    const targetObj = activeTarget.obj;
+    const genotype = targetObj.genotype;
+
+    if (!this.selectedLocus) {
+      this.selectedLocus = 'bodyType';
+    }
+    if (this.selectedAlleleIndex === undefined) {
+      this.selectedAlleleIndex = 0;
+    }
+
+    const locusLabels = { bodyType: 'Cuerpo', ears: 'Orejas', eyes: 'Ojos', horns: 'Cuernos', wings: 'Alas' };
+    const locusHelps = {
+      bodyType: 'Locus del Cuerpo: determina la morfología general y peso del Wokamon.',
+      ears: 'Locus de las Orejas: regula la audición y la expresión de emociones.',
+      eyes: 'Locus de los Ojos: influye en la agudeza visual y la producción de cristales.',
+      horns: 'Locus de los Cuernos: almacena energía electromagnética de los pasos.',
+      wings: 'Locus de las Alas: proporciona equilibrio aerodinámico y bonificación de longevidad.'
+    };
+
+    const crystals = store.loadState().user.crystals || 0;
+    const unlockedGenes = store.loadState().shop.unlockedGenes || [];
+
+    // Visual Render of the target (strictly Eggs)
+    const targetVisualHTML = `
+      <div class="custom-egg-sprite" style="width: 60px; height: 75px; margin: 0 auto; background: ${targetObj.genetics.primaryColor}; box-shadow: inset -5px -10px 15px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.15); border: 2px solid ${targetObj.genetics.bellyColor || '#fff'}; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;">
+        <div class="egg-dots" style="background: ${targetObj.genetics.bellyColor};"></div>
+      </div>
+      <h3 style="font-weight: 800; color: #fff; margin-top: 0.5rem; font-size: 1rem;">${targetObj.name}</h3>
+      <span class="stage-badge" style="font-size: 0.6rem; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 800; text-transform: uppercase; background: var(--gold-accent); color: #fff;">
+        HUEVO EN CUNA
+      </span>
+    `;
+
+    subContentContainer.innerHTML = `
+      <div class="genetics-lab-card glass-panel flex-col animate-slide-in" style="gap: 1.5rem;">
+        
+        <!-- Target Selector & Visual -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <div class="glass-panel-inner" style="padding: 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.5rem;">
+            <label style="font-size: 0.65rem; font-weight: 700; color: var(--text-grey); letter-spacing: 0.5px;">🧬 EDITAR GENOMA CRISPR-Cas9:</label>
+            <select class="glass-select" id="crispr-target-select" style="width: 100%; font-size: 0.8rem; font-weight: 700; padding: 0.6rem;">
+              ${allTargets.map(t => `
+                <option value="${t.id}:${t.type}" ${t.id === this.selectedTargetId ? 'selected' : ''}>${t.name}</option>
+              `).join('')}
+            </select>
+            <p style="font-size: 0.65rem; color: var(--text-grey); line-height: 1.3; margin-top: 0.2rem;">
+              La edición genética CRISPR-Cas9 te permite cortar un alelo y sustituirlo por otro gen conocido de tu catálogo. ¡Las mutaciones actualizan su fenotipo en tiempo real!
+            </p>
+          </div>
+          <div class="glass-panel-inner text-center flex-center flex-col" style="padding: 0.75rem; border-radius: 12px; min-height: 140px; background: rgba(0,0,0,0.1);">
+            ${targetVisualHTML}
+          </div>
+        </div>
+
+        <!-- DNA Loci Inspector Table -->
+        <div class="glass-panel-inner" style="padding: 1.15rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          <strong style="font-size: 0.82rem; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+            <span>🔬 Secuenciación de ADN e Inspector de Loci</span>
+            <span style="font-size: 0.62rem; color: var(--primary-accent); font-weight: 800; letter-spacing: 0.5px;">SELECCIONA UN LOCUS A EDITAR</span>
+          </strong>
+
+          <div class="mendelian-table border-glow">
+            <div class="table-header">
+              <span>Locus <span class="help-btn" data-help="Locus: El lugar exacto en el cromosoma donde se localiza el gen.">?</span></span>
+              <span>Alelo 1 <span class="help-btn" data-help="Alelo 1: Primer gen heredado (materno o paterno). Haz clic para editarlo.">?</span></span>
+              <span>Alelo 2 <span class="help-btn" data-help="Alelo 2: Segundo gen heredado (materno o paterno). Haz clic para editarlo.">?</span></span>
+              <span>Expresión (Fenotipo) <span class="help-btn" data-help="Fenotipo: El rasgo físico visible resultante de la dominancia entre los alelos.">?</span></span>
+              <span>Estado <span class="help-btn" data-help="Cigosidad: Homocigoto si ambos alelos son idénticos; Heterocigoto si son distintos.">?</span></span>
+            </div>
+
+            <div class="table-body">
+              ${['bodyType', 'ears', 'eyes', 'horns', 'wings'].map(locus => {
+                const alleleA = genotype[locus][0];
+                const alleleB = genotype[locus][1];
+
+                const infoA = ALLELES_DOMINANCE[locus][alleleA];
+                const infoB = ALLELES_DOMINANCE[locus][alleleB];
+
+                const isA_Dominant = infoA.dominance >= infoB.dominance;
+                const domAllele = isA_Dominant ? alleleA : alleleB;
+                const recAllele = isA_Dominant ? alleleB : alleleA;
+
+                const isHomozygous = alleleA === alleleB;
+                const domLabel = getTraitValueLabel(ALLELES_DOMINANCE[locus][domAllele].name, locus);
+
+                const isLocusSelected = this.selectedLocus === locus;
+
+                return `
+                  <div class="table-row table-row-selectable ${isLocusSelected ? 'row-active' : ''}" data-locus="${locus}">
+                    <strong class="locus-lbl" style="color: ${isLocusSelected ? 'var(--primary-accent)' : '#fff'};">${locusLabels[locus]}</strong>
+                    
+                    <span class="allele-cell-btn ${isLocusSelected && this.selectedAlleleIndex === 0 ? 'allele-cell-active' : ''}" data-allele-idx="0">
+                      [ ${alleleA} ]
+                    </span>
+                    <span class="allele-cell-btn ${isLocusSelected && this.selectedAlleleIndex === 1 ? 'allele-cell-active' : ''}" data-allele-idx="1">
+                      [ ${alleleB} ]
+                    </span>
+
+                    <span class="pheno-val" style="font-weight: 700; color: #fff;">${domLabel}</span>
+                    
+                    <span class="hidden-val">
+                      <span class="zygo-badge ${isHomozygous ? 'badge-homo' : 'badge-hetero'}">
+                        ${isHomozygous ? 'Homocigoto' : 'Heterocigoto'}
+                      </span>
+                    </span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- CRISPR-Cas9 Engineering Console -->
+        <div class="crispr-cas9-console glass-panel-inner" style="padding: 1.25rem; border-radius: 12px; border: 1.5px solid var(--primary-accent); background: rgba(0, 131, 143, 0.04); display: flex; flex-direction: column; gap: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 131, 143, 0.15); padding-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <strong style="color: #fff; font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem;">
+                🧬 Consola CRISPR-Cas9
+              </strong>
+              <p style="font-size: 0.65rem; color: var(--text-grey); margin-top: 0.1rem;">
+                Cortando locus <strong>${locusLabels[this.selectedLocus]}</strong> > <strong>Alelo ${this.selectedAlleleIndex + 1}</strong> (Actual: <strong style="color: var(--primary-accent);">${genotype[this.selectedLocus][this.selectedAlleleIndex]}</strong>).
+              </p>
+            </div>
+            <div class="crispr-crystals-badge glass-panel-inner" style="padding: 0.25rem 0.6rem; border-radius: 8px; font-weight: 800; font-size: 0.72rem; color: #ffb300; display: flex; align-items: center; gap: 0.25rem; border: 1px solid rgba(255, 179, 0, 0.2); background: rgba(0,0,0,0.15);">
+              <span>Cristales:</span> <strong>${crystals} 💎</strong>
+            </div>
+          </div>
+
+          <!-- Gene Shop and Mutate Catalogue Grid -->
+          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+            
+            <!-- Unlocked Genes Catalog (10 crystals) -->
+            <div>
+              <span style="font-size: 0.65rem; color: var(--primary-accent); font-weight: 800; letter-spacing: 0.5px; display: block; margin-bottom: 0.4rem;">
+                MUTAR ALELO CON GENES CONOCIDOS (Coste: 10 Cristales 💎)
+              </span>
+              
+              <div class="crispr-gene-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 0.5rem;">
+                ${Object.keys(ALLELES_DOMINANCE[this.selectedLocus]).map(alleleLetter => {
+                  const alleleInfo = ALLELES_DOMINANCE[this.selectedLocus][alleleLetter];
+                  const isUnlocked = unlockedGenes.includes(alleleInfo.name);
+                  const isCurrent = genotype[this.selectedLocus][this.selectedAlleleIndex] === alleleLetter;
+                  const canMutate = isUnlocked && !isCurrent && crystals >= 10;
+                  
+                  if (!isUnlocked) return ''; // Render locked genes below
+
+                  return `
+                    <button class="btn btn-crispr-gene-slot ${isCurrent ? 'gene-slot-current' : 'gene-slot-mutate'}" 
+                            data-mutate-allele="${alleleLetter}" 
+                            ${!canMutate ? 'disabled' : ''} 
+                            style="padding: 0.5rem; text-align: left; border-radius: 8px; display: flex; flex-direction: column; gap: 0.15rem; transition: all 0.2s;">
+                      <span style="font-size: 0.55rem; font-weight: 800; color: var(--text-grey);">[ Dominancia: ${alleleInfo.dominance} ]</span>
+                      <strong style="font-size: 0.72rem; color: #fff;">${alleleLetter} : ${getTraitValueLabel(alleleInfo.name, this.selectedLocus)}</strong>
+                      
+                      ${isCurrent ? `
+                        <span style="font-size: 0.52rem; color: var(--primary-accent); font-weight: 800; text-transform: uppercase; margin-top: 0.1rem;">Activo en ADN</span>
+                      ` : `
+                        <span style="font-size: 0.52rem; color: #ffb300; font-weight: 800; margin-top: 0.1rem;">Mutar (10 💎)</span>
+                      `}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <!-- Locked Genes to Unlock (25 crystals) -->
+            <div>
+              <span style="font-size: 0.65rem; color: var(--gold-accent); font-weight: 800; letter-spacing: 0.5px; display: block; margin-bottom: 0.4rem; border-top: 1px dashed rgba(0, 131, 143, 0.15); padding-top: 0.6rem;">
+                DESBLOQUEAR NUEVOS RASGOS EN EL LABORATORIO (Coste: 25 Cristales 💎)
+              </span>
+
+              <div class="crispr-gene-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 0.5rem;">
+                ${Object.keys(ALLELES_DOMINANCE[this.selectedLocus]).map(alleleLetter => {
+                  const alleleInfo = ALLELES_DOMINANCE[this.selectedLocus][alleleLetter];
+                  const isUnlocked = unlockedGenes.includes(alleleInfo.name);
+                  const canUnlock = !isUnlocked && crystals >= 25;
+                  
+                  if (isUnlocked) return ''; // Rendered above
+
+                  const isPremium = alleleInfo.name === 'fire' || alleleInfo.name === 'neon' || alleleInfo.name === 'dragon';
+
+                  return `
+                    <button class="btn btn-crispr-gene-slot gene-slot-locked" 
+                            data-unlock-gene="${alleleInfo.name}" 
+                            ${!canUnlock ? 'disabled' : ''} 
+                            style="padding: 0.5rem; text-align: left; border-radius: 8px; display: flex; flex-direction: column; gap: 0.15rem; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.05);">
+                      <span style="font-size: 0.52rem; font-weight: 800; color: ${isPremium ? '#ffb300' : 'var(--text-grey)'};">🔒 ${isPremium ? 'PREMIUM (Raro)' : 'COMÚN'}</span>
+                      <strong style="font-size: 0.72rem; color: rgba(255,255,255,0.4);">${alleleLetter} : ${getTraitValueLabel(alleleInfo.name, this.selectedLocus)}</strong>
+                      <span style="font-size: 0.52rem; color: var(--gold-accent); font-weight: 800; margin-top: 0.1rem;">Desbloquear (25 💎)</span>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    // Hook target selector change
+    const targetSelect = subContentContainer.querySelector('#crispr-target-select');
+    targetSelect.addEventListener('change', (e) => {
+      const [id, type] = e.target.value.split(':');
+      this.selectedTargetId = id;
+      this.selectedTargetType = type;
+      this.render();
+    });
+
+    // Hook Locus selecting rows & cells
+    subContentContainer.querySelectorAll('.table-row-selectable').forEach(row => {
+      row.addEventListener('click', (e) => {
+        const locus = row.dataset.locus;
+        this.selectedLocus = locus;
+        
+        // If they clicked specifically on a chromosome cell button
+        const cell = e.target.closest('.allele-cell-btn');
+        if (cell) {
+          this.selectedAlleleIndex = parseInt(cell.dataset.alleleIdx, 10);
+        }
+        
+        this.render();
+      });
+    });
+
+    // Hook CRISPR mutation actions
+    subContentContainer.querySelectorAll('[data-mutate-allele]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const allele = btn.dataset.mutateAllele;
+        
+        const success = store.modifyGenotype(
+          this.selectedTargetId,
+          this.selectedTargetType,
+          this.selectedLocus,
+          this.selectedAlleleIndex,
+          allele,
+          10
+        );
+
+        if (success) {
+          this.playHatchSuccessSound();
+          // Show visual notification
+          const toast = document.getElementById('toast-notification-root');
+          if (toast) {
+            toast.className = 'toast-show';
+            toast.textContent = `🧬 CRISPR: Genoma modificado con éxito a ${allele}.`;
+            setTimeout(() => toast.className = '', 2500);
+          }
+          this.render();
+        }
+      });
+    });
+
+    // Hook Gene shop unlock actions
+    subContentContainer.querySelectorAll('[data-unlock-gene]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const geneName = btn.dataset.unlockGene;
+        
+        const success = store.buyShopGene(geneName, 25);
+        if (success) {
+          this.playHatchSuccessSound();
+          const toast = document.getElementById('toast-notification-root');
+          if (toast) {
+            toast.className = 'toast-show';
+            toast.textContent = `🔑 Tienda: Rasgo genético "${geneName}" desbloqueado en el catálogo.`;
+            setTimeout(() => toast.className = '', 2500);
+          }
+          this.render();
+        }
+      });
+    });
+
+    // Hook help tooltips
+    subContentContainer.querySelectorAll('.help-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = btn.dataset.help;
+        const helpOverlay = document.createElement('div');
+        helpOverlay.className = 'genetic-help-popup animate-fade-in';
+        helpOverlay.innerHTML = `
+          <div class="help-popup-content glass-panel-inner pad-md text-center flex-center flex-col" style="max-width: 280px; gap: 0.5rem; background: rgba(255, 255, 255, 0.98); border: 2px solid var(--primary-accent); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <h4 style="font-weight: 800; color: var(--primary-accent); margin-bottom: 0.15rem;">Genética de Wokamon</h4>
+            <p style="font-size: 0.72rem; line-height: 1.4; color: var(--text-white); font-weight: 500; text-align: left; margin: 0.25rem 0;">${text}</p>
+            <button class="btn btn-secondary btn-xs" id="btn-close-help" style="width: 100%; padding: 0.4rem; font-weight: 700; margin-top: 0.25rem;">Cerrar</button>
+          </div>
+        `;
+        document.body.appendChild(helpOverlay);
+        helpOverlay.querySelector('#btn-close-help').addEventListener('click', () => helpOverlay.remove());
+        helpOverlay.addEventListener('click', () => helpOverlay.remove());
+      });
+    });
   }
 
   // Synthesis chimes for sound ticks
