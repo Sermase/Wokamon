@@ -1,10 +1,11 @@
-// Wokamon Evolucionado - Main Entry Point and Orchestrator
+﻿// Wokamon Evolucionado - Main Entry Point and Orchestrator
 
 import store from './utils/state.js';
 import { StepSimulator } from './components/StepSimulator.js';
 import { StableManager } from './components/StableManager.js';
 import { MatingRitual } from './components/MatingRitual.js';
 import { GeneticsLab } from './components/GeneticsLab.js';
+import { StatsDashboard } from './components/StatsDashboard.js';
 import { Capacitor } from '@capacitor/core';
 
 // Import CSS (Vite automatically bundles this)
@@ -15,12 +16,32 @@ document.addEventListener('DOMContentLoaded', () => {
   const stepSim = new StepSimulator();
   const stableMgr = new StableManager();
   const matingRitual = new MatingRitual();
-  const geneticsLab = new GeneticsLab();
+  const incubator = new GeneticsLab({ mode: 'incubator' });
+  const wokadex = new GeneticsLab({ mode: 'dex' });
+  const statsDashboard = new StatsDashboard();
 
   stepSim.init(document.getElementById('step-simulator-container'));
   stableMgr.init(document.getElementById('stable-manager-container'));
   matingRitual.init(document.getElementById('mating-ritual-container'));
-  geneticsLab.init(document.getElementById('genetics-lab-container'));
+  incubator.init(document.getElementById('incubator-container'));
+  wokadex.init(document.getElementById('wokadex-container'));
+  statsDashboard.init(document.getElementById('stats-dashboard-container'));
+
+  let dailyCareCheckRunning = false;
+  const runDailyCareCheck = () => {
+    if (dailyCareCheckRunning || !store.currentUser || store.loadState().isLoading) return;
+    dailyCareCheckRunning = true;
+    const result = store.settleDailyCareIfNeeded();
+    if (result.settled) {
+      showToastNotification(`Reparto diario aplicado: ${result.daysAdvanced} día${result.daysAdvanced === 1 ? '' : 's'}.`);
+    }
+    dailyCareCheckRunning = false;
+  };
+
+  const resumeStepSyncAndCare = () => {
+    stepSim.resumeAutoSyncIfEnabled();
+    runDailyCareCheck();
+  };
 
   // 2. Global Header Stat Subscriptions & Authentication Monitor
   const checkAuthAndRender = () => {
@@ -41,11 +62,18 @@ document.addEventListener('DOMContentLoaded', () => {
   store.subscribe((state) => {
     updateHeaderStats(state);
     checkAuthAndRender();
+    setTimeout(runDailyCareCheck, 0);
   });
   
   // Initial check and draw
   checkAuthAndRender();
   updateHeaderStats(store.loadState());
+  runDailyCareCheck();
+  setInterval(runDailyCareCheck, 60000);
+  window.addEventListener('focus', resumeStepSyncAndCare);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) resumeStepSyncAndCare();
+  });
 
   // 3. Tab Navigation Controller
   const navTabs = document.querySelectorAll('.nav-tab');
@@ -87,34 +115,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // 4. Custom Mating Completion Redirect Hook
   // When NFC completes, we automatically direct the player to the Genetic Incubator Canvas panel!
   window.addEventListener('mating-completed', (e) => {
-    const labTab = document.getElementById('nav-tab-lab');
-    const labPanelId = 'panel-lab';
+    const labTab = document.getElementById('nav-tab-incubator');
+    const labPanelId = 'panel-incubator';
     
     // Switch view automatically
     switchTab(labPanelId, labTab);
 
     // Prompt user with a floating notification
-    showToastNotification(`¡Portal NFC Abierto! Genética de ${e.detail.parentA.name} y ${e.detail.parentB.name} acoplada. Pinta el huevo para eclosionarlo.`);
+    showToastNotification(`Huevo creado: genética de ${e.detail.parentA.name} y ${e.detail.parentB.name} enviada a la incubadora.`);
   });
 
   // 4.5. First Walk Wokamon Spawn Celebration Modal
   window.addEventListener('first-child-spawned', () => {
-    showToastNotification("✨ ¡Milagro! Un Wokamon Niño ('Woki Bebé') ha aparecido atraído por tus pasos. ¡Aliméntalo en el criadero!");
+    showToastNotification("Milagro: un Wokamon Niño ('Woki Bebé') ha aparecido atraído por tus pasos. Aliméntalo en el criadero.");
     
     // Celebratory Modal Popup
     const overlay = document.createElement('div');
     overlay.className = 'payment-overlay';
     overlay.innerHTML = `
       <div class="gift-modal glass-panel pad-lg text-center flex-center flex-col animate-bounce-slow" style="border: 2px solid var(--primary-accent); max-width: 340px;">
-        <div style="font-size: 3.5rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 10px rgba(0,172,193,0.5));">🐣</div>
-        <h2 style="font-weight: 800; color: #fff; margin-bottom: 0.5rem;">¡Un Wokamon ha Llegado!</h2>
+        <div style="font-size: 3.5rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 10px rgba(0,172,193,0.5));">W</div>
+        <h2 style="font-weight: 800; color: #fff; margin-bottom: 0.5rem;">¡Un Wokamon ha llegado!</h2>
         <p class="subtitle" style="max-width: 320px; line-height: 1.4; margin-bottom: 1.25rem; font-size: 0.8rem;">
           Tus primeros pasos han atraído a una criatura recién nacida en la etapa de <strong>Niño</strong>: <strong style="color: var(--primary-accent);">Woki Bebé</strong>.
         </p>
         <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 0.75rem; font-size: 0.72rem; border: 1.5px solid rgba(255,255,255,0.05); margin-bottom: 1.25rem; text-align: left; line-height: 1.4;">
-          💡 Alimentarlo le da energía, cristales y le permite crecer hasta ser Adulto para poder aparearse.
+          Alimentarlo le da energía, cristales y le permite crecer hasta ser Adulto para poder aparearse.
         </div>
-        <button class="btn btn-primary" id="btn-close-first-spawn" style="width: 100%; padding: 0.75rem;">¡A Cuidarlo! ❤️</button>
+        <button class="btn btn-primary" id="btn-close-first-spawn" style="width: 100%; padding: 0.75rem;">¡A cuidarlo!</button>
       </div>
     `;
     document.body.appendChild(overlay);
@@ -141,42 +169,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 5. Ticking Lifecycle Game Loop
-  // Accelerated time scale: 1 tick = 1.5 seconds.
-  // Full day (20 ticks) completes in ~30 seconds to immediately showcase hunger decay, 
-  // droopy ears depression, starving alerts, and death ghosting!
-  const gameLoopInterval = setInterval(() => {
-    const prevWokamons = JSON.stringify(store.getWokamons().map(w => ({ id: w.id, status: w.status })));
-    
-    // Tick State
-    store.tickGameTime();
+  window.addEventListener('day-passed', () => {
+    showToastNotification('Ha pasado 1 día completo en el criadero.');
+  });
 
-    // Check if any Wokamon changed status (e.g. became depressed, starving, or died)
-    // to prompt immediate warning to the user!
-    const newWokamons = store.getWokamons();
-    newWokamons.forEach(w => {
-      const prev = JSON.parse(prevWokamons).find(p => p.id === w.id);
-      if (prev && prev.status !== w.status) {
-        if (w.status === 'depressed') {
-          showToastNotification(`😔 ¡${w.name} se siente deprimido! Camina para recuperar comida.`);
-        } else if (w.status === 'starving') {
-          showToastNotification(`⚠️ ¡CUIDADO! ${w.name} está hambriento y corre el riesgo de morir.`);
-        } else if (w.status === 'dead') {
-          showToastNotification(`👻 ¡${w.name} ha muerto! Ahora vaga como un fantasma en tu criadero.`);
-        }
-      }
-    });
-
-  }, 1500);
+  // 5. Lifecycle
+  // El tiempo ya no avanza en segundo plano. Se controla desde el botón "Pasar 1 día".
 
   // 6. Debug & Reset Actions
   const resetBtn = document.getElementById('btn-debug-reset');
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
-      const confirmReset = confirm('¿Quieres borrar todos tus Wokamons, suscripción premium y reiniciar el criadero?');
+      const confirmReset = confirm('¿Quieres borrar todos tus Wokamon, la suscripción premium y reiniciar el criadero?');
       if (confirmReset) {
         store.resetAll();
-        showToastNotification('🔄 Prototipo reestablecido a valores de fábrica.');
+        showToastNotification('Prototipo restablecido a valores de fábrica.');
       }
     });
   }
@@ -193,13 +200,13 @@ function updateHeaderStats(state) {
   const usernameDisplay = document.getElementById('header-username-display');
 
   if (stepsNode) {
-    stepsNode.textContent = user.isPremium 
-      ? user.stepsToday.toLocaleString() + ' (∞)' 
-      : user.stepsToday.toLocaleString() + ' / 1.500';
+    stepsNode.textContent = user.isPremium
+      ? user.stepsToday.toLocaleString() + ' (sin límite)'
+      : user.stepsToday.toLocaleString() + ' / 10.000';
   }
   
   if (energyNode) {
-    energyNode.textContent = user.totalEnergy.toLocaleString() + ' EP';
+    energyNode.textContent = user.totalEnergy.toLocaleString();
   }
 
   if (crystalsNode) {
@@ -220,7 +227,7 @@ function updateHeaderStats(state) {
     if (store.currentUser) {
       const avatar = store.currentUserPhoto
         ? `<img src="${store.currentUserPhoto}" alt="" style="width: 18px; height: 18px; border-radius: 999px; vertical-align: middle; margin-right: 0.35rem;">`
-        : '👤 ';
+        : '';
       usernameDisplay.innerHTML = `${avatar}Cuenta: <strong>${store.currentUser}</strong> <span id="btn-header-signout" style="color: #ff5252; cursor: pointer; margin-left: 0.75rem; text-decoration: underline; font-weight: 400;">[Salir]</span>`;
       usernameDisplay.style.display = 'block';
       
@@ -249,7 +256,7 @@ function createAuthOverlayDOM() {
 
   overlay.innerHTML = `
     <div class="auth-panel glass-panel pad-lg text-center flex-center flex-col animate-slide-in" style="max-width: 380px; width: 90%; gap: 1.25rem; background: rgba(255, 255, 255, 0.95); border: 2px solid var(--primary-accent); box-shadow: 0 10px 40px rgba(0, 77, 64, 0.15);">
-      <div class="header-logo" style="font-size: 3rem; margin-bottom: -0.25rem;">🧬</div>
+      <div class="header-logo" style="font-size: 3rem; margin-bottom: -0.25rem;">W</div>
       <h2 style="font-weight: 800; color: var(--text-white);">Wokamon Evolved</h2>
       <p class="subtitle" style="font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--text-grey);">Crea o ingresa a tu criadero sincronizado en Firebase.</p>
 
@@ -263,7 +270,7 @@ function createAuthOverlayDOM() {
       </div>
       
       <div class="auth-tabs" style="display: flex; width: 100%; gap: 0.5rem; background: rgba(0, 131, 143, 0.05); padding: 0.25rem; border-radius: 8px; border: 1px solid rgba(0, 131, 143, 0.15);">
-        <button class="btn btn-secondary btn-xs" id="auth-tab-signin" style="flex: 1; padding: 0.4rem; font-size: 0.75rem;">Iniciar Sesión</button>
+        <button class="btn btn-secondary btn-xs" id="auth-tab-signin" style="flex: 1; padding: 0.4rem; font-size: 0.75rem;">Iniciar sesión</button>
         <button class="btn btn-secondary btn-xs" id="auth-tab-signup" style="flex: 1; padding: 0.4rem; font-size: 0.75rem;">Registrar Cuenta</button>
       </div>
 
@@ -275,13 +282,13 @@ function createAuthOverlayDOM() {
         
         <div class="input-group">
           <label style="font-size: 0.65rem; font-weight: 700; color: var(--text-grey); display: block; margin-bottom: 0.25rem; letter-spacing: 0.5px;">CONTRASEÑA</label>
-          <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" style="width: 100%; background: rgba(255, 255, 255, 0.75); border: 1.5px solid rgba(0, 131, 143, 0.2); border-radius: 8px; color: var(--text-white); padding: 0.6rem; font-size: 0.8rem; outline: none; transition: all 0.25s;">
+          <input type="password" id="auth-password" placeholder="Contraseña" autocomplete="current-password" style="width: 100%; background: rgba(255, 255, 255, 0.75); border: 1.5px solid rgba(0, 131, 143, 0.2); border-radius: 8px; color: var(--text-white); padding: 0.6rem; font-size: 0.8rem; outline: none; transition: all 0.25s;">
         </div>
         
         <div class="error-msg" id="auth-error-msg" style="color: #ff5252; font-size: 0.7rem; font-weight: 600; display: none;"></div>
       </div>
 
-      <button class="btn btn-primary" id="btn-auth-submit" style="width: 100%; padding: 0.75rem; font-weight: 700;">Entrar al Criadero 🔑</button>
+      <button class="btn btn-primary" id="btn-auth-submit" style="width: 100%; padding: 0.75rem; font-weight: 700;">Entrar al criadero</button>
     </div>
   `;
   
@@ -324,9 +331,9 @@ function createAuthOverlayDOM() {
     mode = newMode;
     errorMsg.style.display = 'none';
     if (mode === 'signin') {
-      submitBtn.textContent = 'Entrar al Criadero 🔑';
+      submitBtn.textContent = 'Entrar al criadero';
     } else {
-      submitBtn.textContent = 'Crear Cuenta y Entrar 🐣';
+      submitBtn.textContent = 'Crear cuenta y entrar';
     }
     updateTabStyles();
   };
@@ -368,12 +375,12 @@ function createAuthOverlayDOM() {
   };
 
   googleBtn.addEventListener('click', () => {
-    runProviderSignIn(googleBtn, () => store.signInWithGoogle(), '✨ Criadero cargado con Google.');
+    runProviderSignIn(googleBtn, () => store.signInWithGoogle(), 'Criadero cargado con Google.');
   });
 
   if (playGamesBtn) {
     playGamesBtn.addEventListener('click', () => {
-      runProviderSignIn(playGamesBtn, () => store.signInWithPlayGames(), '🎮 Criadero cargado con Google Play Games.');
+      runProviderSignIn(playGamesBtn, () => store.signInWithPlayGames(), 'Criadero cargado con Google Play Games.');
     });
   }
 
@@ -389,7 +396,7 @@ function createAuthOverlayDOM() {
 
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Conectando con la nube... ⏳';
+    submitBtn.textContent = 'Conectando con la nube...';
     errorMsg.style.display = 'none';
 
     try {
@@ -402,7 +409,7 @@ function createAuthOverlayDOM() {
 
       if (res.success) {
         overlay.remove();
-        showToastNotification(`✨ ¡Criadero de ${username} cargado con éxito!`);
+        showToastNotification(`¡Criadero de ${username} cargado con éxito!`);
         
         try {
           const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -485,3 +492,5 @@ styleSheet.textContent = `
   }
 `;
 document.head.appendChild(styleSheet);
+
+
