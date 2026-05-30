@@ -5,6 +5,42 @@ import { renderWokamonSVG } from './WokamonRenderer.js';
 
 const FEED_COST = 150;
 
+const locusLabels = {
+  bodyBase: 'Silueta Cuerpo',
+  bodyProportion: 'Proporciones',
+  limbType: 'Extremidades',
+  headMerge: 'Unión Cabeza',
+  topAppendage: 'Apéndice Sup.',
+  tailType: 'Cola',
+  bellyShape: 'Barriga',
+  eyeShape: 'Forma Ojos',
+  pupilStyle: 'Pupilas',
+  mouthStyle: 'Boca',
+  surfaceType: 'Piel/Textura',
+  metabolism: 'Metabolismo',
+  longevity: 'Longevidad',
+  diseaseResilience: 'Inmunidad',
+  vitalityStorage: 'Reserva Vital'
+};
+
+const locusHelps = {
+  bodyBase: 'Silueta base y contorno del cuerpo (redondo, alubia, pera, nube, etc.).',
+  bodyProportion: 'Escala y proporción corporal (equilibrada, regordeta, alta, diminuta).',
+  limbType: 'Longitud y diseño de extremidades (cortas, suaves, largas, elásticas).',
+  headMerge: 'Nivel de fusión/unión de la cabeza respecto al tronco.',
+  topAppendage: 'Apéndice de la cabeza (cuernos, antenas, orejas de animal, brotes o sin apéndice).',
+  tailType: 'Forma y tipo de cola (sin cola, pompón, espinas, peluda).',
+  bellyShape: 'Forma del patrón del vientre (oval, corazón, gota, nube, o sin barriga).',
+  eyeShape: 'Diseño y expresión Kawaii de los ojos (redondos, dormilones, brillantes, abiertos, caídos).',
+  pupilStyle: 'Reflejos y tipo de pupilas (punto, brillante, estrella, felina).',
+  mouthStyle: 'Forma y expresión de la boca (sonrisa, abierta, colmillo, tímida).',
+  surfaceType: 'Volumen 3D y textura de la piel (suave, peluche, gelatina, peluda, mate).',
+  metabolism: 'Tasa metabólica: eficiente (-15% pasos), rápido (+20% crecimiento y +10% pasos), o normal.',
+  longevity: 'Esperanza de vida máxima: larga (+6 días de vida útil), corta (-3 días), o normal.',
+  diseaseResilience: 'Inmunidad al enfermar: fuerte (cura 40% más rápido), delicada (+30% susceptibilidad), o normal.',
+  vitalityStorage: 'Reserva de vitalidad máxima: elevada (+20 de capacidad vital, total 140) o normal.'
+};
+
 function getStatusLabel(status) {
   const labels = {
     happy: 'Feliz',
@@ -96,34 +132,81 @@ export class StableManager {
             </div>
             
             <div class="table-body">
-              ${['bodyType', 'ears', 'eyes', 'horns', 'wings'].map(locus => {
-                const locusLabels = { bodyType: 'Cuerpo', ears: 'Orejas', eyes: 'Ojos', horns: 'Cuernos', wings: 'Alas' };
-                const genotype = wokamon.genotype[locus];
-                const alleleA = genotype[0];
-                const alleleB = genotype[1];
-                
-                const infoA = ALLELES_DOMINANCE[locus][alleleA];
-                const infoB = ALLELES_DOMINANCE[locus][alleleB];
+              ${(() => {
+                const groups = [
+                  {
+                    id: 'morphology',
+                    label: '📐 Morfología (Cuerpo y Forma)',
+                    loci: ['bodyBase', 'bodyProportion', 'limbType', 'headMerge', 'topAppendage', 'tailType', 'bellyShape']
+                  },
+                  {
+                    id: 'physiognomy',
+                    label: '👁️ Fisonomía y Piel (Aspecto)',
+                    loci: ['eyeShape', 'pupilStyle', 'mouthStyle', 'surfaceType']
+                  },
+                  {
+                    id: 'physiology',
+                    label: '⚡ Fisiología (Gameplay)',
+                    loci: ['metabolism', 'longevity', 'diseaseResilience', 'vitalityStorage']
+                  }
+                ];
 
-                const isA_Dominant = infoA.dominance >= infoB.dominance;
-                const domAllele = isA_Dominant ? alleleA : alleleB;
-                const recAllele = isA_Dominant ? alleleB : alleleA;
-                
-                const isHomozygous = alleleA === alleleB;
-                const domLabel = getTraitValueLabel(ALLELES_DOMINANCE[locus][domAllele].name, locus);
-                const recLabel = isHomozygous 
-                  ? '<span class="homo-badge">Homocigoto</span>' 
-                  : getTraitValueLabel(ALLELES_DOMINANCE[locus][recAllele].name, locus);
+                return groups.map(grp => {
+                  return `
+                    <div class="genetics-group-folder">
+                      <button type="button" class="group-folder-header" data-group="${grp.id}" style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.75rem; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; margin-top: 0.4rem; color: #fff; font-weight: 700; cursor: pointer; text-align: left; transition: background 0.2s; font-size: 0.72rem;">
+                        <span style="display: flex; align-items: center; gap: 0.4rem;">
+                          <span>${grp.label}</span>
+                        </span>
+                        <span class="group-toggle-arrow" style="font-size: 0.55rem; color: var(--text-grey);">▶</span>
+                      </button>
+                      <div class="group-folder-content" id="group-content-${grp.id}" style="display: none;">
+                        ${grp.loci.map(locus => {
+                          const genotype = wokamon.genotype[locus];
+                          if (!genotype) return '';
+                          const alleleA = genotype[0];
+                          const alleleB = genotype[1];
+                          
+                          let infoA = ALLELES_DOMINANCE[locus][alleleA];
+                          let infoB = ALLELES_DOMINANCE[locus][alleleB];
+                          
+                          if (!infoA || !infoB) {
+                            const defaultAllele = Object.keys(ALLELES_DOMINANCE[locus])[0];
+                            if (!infoA) infoA = ALLELES_DOMINANCE[locus][defaultAllele];
+                            if (!infoB) infoB = ALLELES_DOMINANCE[locus][defaultAllele];
+                          }
 
-                return `
-                  <div class="table-row">
-                    <strong class="locus-lbl">${locusLabels[locus]}</strong>
-                    <span class="alleles-seq">[ ${alleleA} / ${alleleB} ]</span>
-                    <span class="pheno-val">${domLabel}</span>
-                    <span class="hidden-val">${recLabel}</span>
-                  </div>
-                `;
-              }).join('')}
+                          const isA_Dominant = infoA.dominance >= infoB.dominance;
+                          const domAllele = isA_Dominant ? alleleA : alleleB;
+                          const recAllele = isA_Dominant ? alleleB : alleleA;
+                          
+                          const isHomozygous = alleleA === alleleB;
+                          
+                          const resolvedDom = ALLELES_DOMINANCE[locus][domAllele] || infoA;
+                          const resolvedRec = ALLELES_DOMINANCE[locus][recAllele] || infoB;
+                          
+                          const domLabel = getTraitValueLabel(resolvedDom.name, locus);
+                          const recLabel = isHomozygous 
+                            ? '<span class="homo-badge">Homocigoto</span>' 
+                            : getTraitValueLabel(resolvedRec.name, locus);
+
+                          return `
+                            <div class="table-row">
+                              <strong class="locus-lbl">
+                                ${locusLabels[locus]}
+                                <span class="help-btn" data-help="${locusHelps[locus]}">?</span>
+                              </strong>
+                              <span class="alleles-seq">[ ${alleleA} / ${alleleB} ]</span>
+                              <span class="pheno-val">${domLabel}</span>
+                              <span class="hidden-val">${recLabel}</span>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    </div>
+                  `;
+                }).join('');
+              })()}
             </div>
           </div>
         </div>
@@ -147,6 +230,22 @@ export class StableManager {
       if (event.target === overlay) overlay.remove();
     });
 
+    // Hook Collapsible groups
+    overlay.querySelectorAll('.group-folder-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const group = header.dataset.group;
+        const content = overlay.querySelector(`#group-content-${group}`);
+        const arrow = header.querySelector('.group-toggle-arrow');
+        if (content.style.display === 'none') {
+          content.style.display = 'block';
+          arrow.textContent = '▼';
+        } else {
+          content.style.display = 'none';
+          arrow.textContent = '▶';
+        }
+      });
+    });
+
     // Hook Help buttons for real genomic explanations
     overlay.querySelectorAll('.help-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -157,7 +256,7 @@ export class StableManager {
         helpOverlay.innerHTML = `
           <div class="help-popup-content glass-panel-inner pad-md text-center flex-center flex-col" style="max-width: 280px; gap: 0.5rem; background: rgba(255, 255, 255, 0.98); border: 2px solid var(--primary-accent); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
             <h4 style="font-weight: 800; color: var(--primary-accent); margin-bottom: 0.15rem;">Genética de Wokamon</h4>
-            <p style="font-size: 0.72rem; line-height: 1.4; color: var(--text-white); font-weight: 500; text-align: left; margin: 0.25rem 0;">${text}</p>
+            <p style="font-size: 0.72rem; line-height: 1.4; color: #37474f; font-weight: 600; text-align: left; margin: 0.25rem 0;">${text}</p>
             <button class="btn btn-secondary btn-xs" id="btn-close-help" style="width: 100%; padding: 0.4rem; font-weight: 700; margin-top: 0.25rem;">Cerrar</button>
           </div>
         `;
