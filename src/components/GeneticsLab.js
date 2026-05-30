@@ -568,25 +568,53 @@ export class GeneticsLab {
     const collection = active.collection || [];
     const logs = active.history || [];
 
-    const allTraits = {
-      bodyType: ['round', 'oval', 'squarish', 'cloud', 'blob'],
-      ears: ['pointy', 'floppy', 'long', 'teddy'],
-      eyes: ['normal', 'sparkle', 'sleepy', 'fire'],
-      horns: ['none', 'small', 'ram', 'neon'],
-      wings: ['none', 'angel', 'dragon']
-    };
+    // Define the three official groups of loci
+    const groups = [
+      {
+        id: 'morfologia',
+        title: '📐 Morfología (Genes de Forma)',
+        loci: ['bodyBase', 'bodyProportion', 'limbType', 'headMerge', 'topAppendage', 'tailType', 'bellyShape']
+      },
+      {
+        id: 'fisonomia',
+        title: '👁️ Fisonomía y Piel (Aspecto y Expresión)',
+        loci: ['eyeShape', 'pupilStyle', 'mouthStyle', 'surfaceType']
+      },
+      {
+        id: 'fisiologia',
+        title: '🧬 Fisiología (Funcionamiento y Gameplay)',
+        loci: ['metabolism', 'longevity', 'diseaseResilience', 'vitalityStorage']
+      }
+    ];
 
-    const isTraitUnlocked = (locus, name) => {
-      return collection.some(sig => sig.includes(`${locus}:${name}`));
+    const locusTitles = {
+      bodyBase: 'Silueta del Cuerpo',
+      bodyProportion: 'Proporción Corporal',
+      limbType: 'Tipo de Extremidades',
+      headMerge: 'Unión de Cabeza',
+      topAppendage: 'Apéndice Superior',
+      tailType: 'Tipo de Cola',
+      bellyShape: 'Silueta de Barriga',
+      eyeShape: 'Forma de Ojos',
+      pupilStyle: 'Estilo de Pupila',
+      mouthStyle: 'Estilo de Boca',
+      surfaceType: 'Textura de Piel',
+      metabolism: 'Metabolismo',
+      longevity: 'Esperanza de Vida',
+      diseaseResilience: 'Inmunidad / Salud',
+      vitalityStorage: 'Reserva Energética'
     };
 
     let totalDiscovered = 0;
     let totalPossible = 0;
 
-    for (const locus in allTraits) {
-      allTraits[locus].forEach(() => totalPossible++);
-      allTraits[locus].forEach(name => {
-        if (isTraitUnlocked(locus, name)) totalDiscovered++;
+    for (const locus in ALLELES_DOMINANCE) {
+      const alleles = Object.values(ALLELES_DOMINANCE[locus]);
+      alleles.forEach(allele => {
+        totalPossible++;
+        if (collection.includes(`${locus}:${allele.name}`)) {
+          totalDiscovered++;
+        }
       });
     }
 
@@ -594,45 +622,90 @@ export class GeneticsLab {
       <div style="display: flex; flex-direction: column; gap: 1.5rem;" class="animate-slide-in">
         
         <!-- Wokadex Section -->
-        <div class="glass-panel" style="padding: 1.5rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div class="glass-panel" style="padding: 1.5rem; background: rgba(18, 28, 26, 0.85); border: 1px solid rgba(255,255,255,0.08);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
-              <h3 style="font-weight: 800; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 0.35rem;">
+              <h3 style="font-weight: 800; color: #fff; font-size: 1.25rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 0.35rem;">
                 Colección de rasgos Wokadex
               </h3>
-              <p class="subtitle" style="font-size: 0.72rem; color: var(--text-grey);">Descubre genes y cruces raros para completar el catálogo biológico.</p>
+              <p class="subtitle" style="font-size: 0.72rem; color: #a3c2ba;">Descubre genes y cruces raros para completar el catálogo biológico de 15 loci.</p>
             </div>
-            <div class="nursery-badge glass-panel-inner" style="background: rgba(0, 172, 193, 0.05); border-color: rgba(0, 172, 193, 0.15); padding: 0.3rem 0.6rem; border-radius: 6px;">
-              <span class="count" style="color: var(--primary-accent); font-weight: 800; font-size: 0.75rem;">${totalDiscovered} / ${totalPossible} Genes</span>
-              <span class="mult" style="font-size: 0.52rem; color: var(--text-grey);">Descubiertos</span>
+            <div class="nursery-badge glass-panel-inner" style="background: rgba(0, 172, 193, 0.12); border: 1px solid rgba(0, 172, 193, 0.35); padding: 0.4rem 0.8rem; border-radius: 8px;">
+              <span class="count" style="color: #00e5ff; font-weight: 900; font-size: 0.95rem; text-shadow: 0 1px 3px rgba(0,0,0,0.6); display: block;">${totalDiscovered} / ${totalPossible}</span>
+              <span class="mult" style="font-size: 0.55rem; color: #a3c2ba; font-weight: 700; display: block; text-transform: uppercase;">Descubiertos</span>
             </div>
           </div>
 
-          <!-- Loci display -->
-          <div class="dex-loci-sections" style="display: flex; flex-direction: column; gap: 1.25rem;">
-            ${Object.keys(allTraits).map(locus => {
-              const locusLabel = locus === 'bodyType' ? 'TIPO DE CUERPO' : (locus === 'ears' ? 'OREJAS' : (locus === 'eyes' ? 'OJOS' : (locus === 'horns' ? 'CUERNOS' : 'ALAS')));
-              
+          <!-- Loci display grouped by category -->
+          <div class="dex-loci-sections" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            ${groups.map(group => {
               return `
-                <div class="dex-locus-block">
-                  <h4 style="font-size: 0.65rem; color: var(--primary-accent); font-weight: 800; margin-bottom: 0.5rem; letter-spacing: 0.5px;">${locusLabel}</h4>
-                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.5rem;">
-                    ${allTraits[locus].map(name => {
-                      const unlocked = isTraitUnlocked(locus, name);
-                      const isPremium = name === 'fire' || name === 'neon' || name === 'dragon';
+                <div class="dex-group-block glass-panel-inner" style="padding: 1.25rem; border-radius: 12px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255,255,255,0.04);">
+                  <h4 style="font-size: 0.9rem; font-weight: 900; margin-bottom: 1.25rem; text-shadow: 0 1px 3px rgba(0,0,0,0.7); display: flex; align-items: center; gap: 0.35rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem; color: #00e5ff;">
+                    ${group.title}
+                  </h4>
+                  
+                  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    ${group.loci.map(locus => {
+                      const locusTitle = locusTitles[locus] || locus;
+                      const alleles = Object.keys(ALLELES_DOMINANCE[locus] || {}).map(key => {
+                        const alleleInfo = ALLELES_DOMINANCE[locus][key];
+                        const unlocked = collection.includes(`${locus}:${alleleInfo.name}`);
+                        return { key, ...alleleInfo, unlocked };
+                      });
                       
-                      const label = getTraitValueLabel(name, locus).toUpperCase();
+                      const discoveredInLocus = alleles.filter(a => a.unlocked).length;
                       
                       return `
-                        <div style="padding: 0.6rem; border-radius: 8px; border: 1px solid ${unlocked ? (isPremium ? 'rgba(230,81,0,0.3)' : 'rgba(255,255,255,0.06)') : 'rgba(255,255,255,0.02)'}; background: ${unlocked ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.1)'}; text-align: center; position: relative; transition: all 0.2s;">
-                          ${!unlocked ? `
-                            <span style="font-size: 1.2rem; display: block; opacity: 0.25; filter: blur(1px);">?</span>
-                            <span style="font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.15); display: block;">POR DESCUBRIR</span>
-                          ` : `
-                            <span style="font-size: 1.2rem; display: block;">${isPremium ? 'Raro' : 'Gen'}</span>
-                            <span style="font-size: 0.65rem; font-weight: 800; color: ${isPremium ? '#ffb74d' : '#fff'}; display: block;">${label}</span>
-                            <span style="font-size: 0.5rem; color: var(--text-grey); display: block; text-transform: capitalize;">${isPremium ? 'Rasgo premium' : 'Rasgo común'}</span>
-                          `}
+                        <div class="dex-locus-item" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                          <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.75rem; color: #ffeb3b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.4);">
+                              ${locusTitle}
+                            </span>
+                            <span style="font-size: 0.65rem; color: #a3c2ba; font-weight: 700;">
+                              ${discoveredInLocus} / ${alleles.length} Descubiertos
+                            </span>
+                          </div>
+                          
+                          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.5rem;">
+                            ${alleles.map(allele => {
+                              const isPremium = allele.key === 'H' || allele.key === 'N' || allele.key === 'f' || allele.key === 'j' || allele.key === 'E' || allele.key === 'L' || allele.key === 'I';
+                              
+                              if (allele.unlocked) {
+                                return `
+                                  <div class="unlocked-allele-card" style="padding: 0.6rem; border-radius: 8px; text-align: center; position: relative; transition: all 0.2s; 
+                                    background: ${isPremium ? 'linear-gradient(135deg, rgba(255, 145, 0, 0.15) 0%, rgba(230, 81, 0, 0.06) 100%)' : 'rgba(255, 255, 255, 0.04)'}; 
+                                    border: 1px solid ${isPremium ? 'rgba(255, 145, 0, 0.4)' : 'rgba(255, 255, 255, 0.12)'};
+                                    box-shadow: ${isPremium ? '0 0 8px rgba(255, 145, 0, 0.08)' : 'none'};">
+                                    <div style="font-size: 0.78rem; font-weight: 900; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; gap: 0.25rem; margin-bottom: 0.15rem;">
+                                      <span style="display: inline-block; background: ${isPremium ? '#ff9100' : '#00e5ff'}; color: #000; border-radius: 4px; padding: 0.05rem 0.25rem; font-size: 0.6rem; font-weight: 900; line-height: 1.1; box-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                                        ${allele.key}
+                                      </span>
+                                      <span style="color: ${isPremium ? '#ffb74d' : '#fff'};">${allele.name.toUpperCase()}</span>
+                                    </div>
+                                    <div style="font-size: 0.52rem; color: #a3c2ba; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; font-weight: 600;" title="${allele.label}">
+                                      ${allele.label.split('(')[0].trim()}
+                                    </div>
+                                  </div>
+                                `;
+                              } else {
+                                return `
+                                  <div class="locked-allele-card" style="padding: 0.6rem; border-radius: 8px; text-align: center; position: relative; 
+                                    background: rgba(0, 0, 0, 0.35); border: 1px dashed rgba(255, 255, 255, 0.05);">
+                                    <div style="font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; gap: 0.2rem; margin-bottom: 0.15rem;">
+                                      <span style="display: inline-block; background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.2); border-radius: 4px; padding: 0.05rem 0.25rem; font-size: 0.58rem; font-weight: 900; line-height: 1.1;">
+                                        ?
+                                      </span>
+                                      <span>POR DESCUBRIR</span>
+                                    </div>
+                                    <div style="font-size: 0.52rem; color: rgba(255,255,255,0.06); font-weight: 500;">
+                                      Incógnita genética
+                                    </div>
+                                  </div>
+                                `;
+                              }
+                            }).join('')}
+                          </div>
                         </div>
                       `;
                     }).join('')}
@@ -644,33 +717,33 @@ export class GeneticsLab {
         </div>
 
         <!-- Bitácora de actividades -->
-        <div class="glass-panel" style="padding: 1.5rem;">
-          <h3 style="font-weight: 800; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.25rem;">
+        <div class="glass-panel" style="padding: 1.5rem; background: rgba(18, 28, 26, 0.85); border: 1px solid rgba(255,255,255,0.08);">
+          <h3 style="font-weight: 800; color: #fff; font-size: 1.25rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.25rem;">
             Bitácora de actividades del criadero
           </h3>
-          <p class="subtitle" style="font-size: 0.72rem; color: var(--text-grey); margin-bottom: 1rem;">Registro histórico de tus caminatas, apareamientos, eclosiones y cuidados de salud.</p>
+          <p class="subtitle" style="font-size: 0.72rem; color: #a3c2ba; margin-bottom: 1rem;">Registro histórico de tus caminatas, apareamientos, eclosiones y cuidados de salud.</p>
           
-          <div class="logs-timeline" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 300px; overflow-y: auto; padding-right: 0.5rem; background: rgba(0,0,0,0.15); padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.03);">
+          <div class="logs-timeline" style="display: flex; flex-direction: column; gap: 0.6rem; max-height: 300px; overflow-y: auto; padding-right: 0.5rem; background: rgba(0,0,0,0.25); padding: 0.85rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);">
             ${logs.length === 0 ? `
-              <div style="text-align: center; color: var(--text-grey); padding: 1.5rem 0; font-size: 0.75rem;">
+              <div style="text-align: center; color: #a3c2ba; padding: 1.5rem 0; font-size: 0.75rem;">
                 No hay registros aún. Simula caminar, alimenta a tu criatura o haz un cruce.
               </div>
             ` : logs.map(log => {
               let icon = '•';
-              if (log.type === 'WALK') icon = 'Pasos';
-              else if (log.type === 'FEED') icon = 'Comida';
-              else if (log.type === 'BREED') icon = 'Cruce';
-              else if (log.type === 'HATCH') icon = 'Huevo';
-              else if (log.type === 'GIFT') icon = 'Regalo';
-              else if (log.type === 'CLAIM') icon = 'Recibido';
-              else if (log.type === 'SHOP_BUY') icon = 'Tienda';
+              if (log.type === 'WALK') icon = '👣';
+              else if (log.type === 'FEED') icon = '🍪';
+              else if (log.type === 'BREED') icon = '💖';
+              else if (log.type === 'HATCH') icon = '🥚';
+              else if (log.type === 'GIFT') icon = '🎁';
+              else if (log.type === 'CLAIM') icon = '📥';
+              else if (log.type === 'SHOP_BUY') icon = '💎';
               
               return `
-                <div style="display: flex; gap: 0.5rem; font-size: 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 0.35rem; align-items: flex-start;">
-                  <span style="font-size: 0.9rem; flex-shrink: 0; margin-top: -0.1rem;">${icon}</span>
+                <div style="display: flex; gap: 0.6rem; font-size: 0.72rem; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 0.4rem; align-items: flex-start;">
+                  <span style="font-size: 0.95rem; flex-shrink: 0; margin-top: -0.1rem;">${icon}</span>
                   <div style="display: flex; flex-direction: column; gap: 0.05rem; width: 100%;">
-                    <span style="color: #fff; font-weight: 500; line-height: 1.3;">${log.text}</span>
-                    <span style="font-size: 0.55rem; color: var(--text-grey);">${log.timestamp}</span>
+                    <span style="color: #fff; font-weight: 600; line-height: 1.35; text-shadow: 0 1px 2px rgba(0,0,0,0.4);">${log.text}</span>
+                    <span style="font-size: 0.58rem; color: #a3c2ba; font-weight: 500;">${log.timestamp}</span>
                   </div>
                 </div>
               `;

@@ -868,10 +868,22 @@ class GameState {
   // Add phenotype signature to discovery album
   registerDiscovery(wokamon) {
     if (!this.activeUser) return;
-    const signature = `bodyType:${wokamon.genetics.bodyType}|ears:${wokamon.genetics.ears}|eyes:${wokamon.genetics.eyes}|horns:${wokamon.genetics.horns}|wings:${wokamon.genetics.wings}`;
-    if (!this.collection.includes(signature)) {
-      this.collection.push(signature);
-      this.logActivity('HATCH', `Registrado en Wokadex: ${wokamon.name} descubrió nuevos rasgos.`);
+    let newDiscoveries = 0;
+    
+    // We check all 15 loci
+    for (const locus in ALLELES_DOMINANCE) {
+      const val = wokamon.genetics[locus];
+      if (val) {
+        const signature = `${locus}:${val}`;
+        if (!this.collection.includes(signature)) {
+          this.collection.push(signature);
+          newDiscoveries++;
+        }
+      }
+    }
+    
+    if (newDiscoveries > 0) {
+      this.logActivity('HATCH', `Registrado en Wokadex: ¡${wokamon.name} reveló ${newDiscoveries} rasgo(s) nuevo(s)!`);
       this.saveAll();
     }
   }
@@ -1341,7 +1353,7 @@ class GameState {
 
   startNfcMating(parentAId, stepsTarget = 5000) {
     const parentA = this.wokamons.find(w => w.id === parentAId);
-    if (!parentA || parentA.status === 'dead' || parentA.stage === 'Niño') return false;
+    if (!parentA || parentA.status === 'dead') return false;
 
     const friendWokamonTypes = [
       {

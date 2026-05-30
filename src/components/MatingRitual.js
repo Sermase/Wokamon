@@ -67,7 +67,7 @@ export class MatingRitual {
     if (!this.container) return;
 
     const livingWokamons = store.getWokamons().filter(w => w.status !== 'dead');
-    const adults = livingWokamons.filter(w => w.stage === 'Adulto' || w.stage === 'Anciano');
+    const adults = livingWokamons; // Relax constraint: allow any living Wokamon (even children) to mate
     const mating = store.getMatingState();
 
     if (!this.selectedWokamonId && adults.length > 0) {
@@ -135,7 +135,7 @@ export class MatingRitual {
             <div class="preview-svg-wrapper">${renderWokamonSVG(selectedWok)}</div>
             <div class="preview-text-block">
               <h3>${selectedWok.name}</h3>
-              <p>Cuerpo: <strong>${getTraitValueLabel(selectedWok.genetics.bodyType, 'bodyType')}</strong> | Orejas: <strong>${getTraitValueLabel(selectedWok.genetics.ears, 'ears')}</strong></p>
+              <p>Cuerpo: <strong>${getTraitValueLabel(selectedWok.genetics.bodyBase, 'bodyBase')}</strong> | Apéndice: <strong>${getTraitValueLabel(selectedWok.genetics.topAppendage, 'topAppendage')}</strong></p>
               <button class="btn btn-primary btn-spark-start" id="btn-initiate-mating">Buscar pareja NFC</button>
             </div>
           </div>
