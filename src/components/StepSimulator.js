@@ -232,7 +232,9 @@ export class StepSimulator {
 
         <div class="home-secondary-actions">
           <button class="btn btn-secondary btn-xs" id="btn-step-normal" ${isLimitReached ? 'disabled' : ''}>+${NORMAL_STEP_GRANT} pasos</button>
+          <button class="btn btn-secondary btn-xs" style="border: 1px dashed #2196f3;" id="btn-step-cheat">+10k pasos 👣</button>
           <button class="btn btn-secondary btn-xs" id="btn-pass-day">Pasar 1 día</button>
+          <button class="btn btn-secondary btn-xs" style="border: 1px dashed #e040fb;" id="btn-cheat-crystals">+10 Cristales 💎</button>
         </div>
 
         <p class="home-sync-status">${this.syncStatus}</p>
@@ -251,10 +253,18 @@ export class StepSimulator {
       this.handleStepResult(store.addSteps(NORMAL_STEP_GRANT));
     });
 
+    this.container.querySelector('#btn-step-cheat').addEventListener('click', () => {
+      this.handleStepResult(store.addSteps(10000));
+    });
+
     this.container.querySelector('#btn-pass-day').addEventListener('click', () => {
       if (store.advanceOneDay()) {
         window.dispatchEvent(new CustomEvent('day-passed'));
       }
+    });
+
+    this.container.querySelector('#btn-cheat-crystals').addEventListener('click', () => {
+      store.addCrystalsManual(10);
     });
 
     const feedBtn = this.container.querySelector('#btn-home-feed');

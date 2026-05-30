@@ -86,6 +86,22 @@ export function getRandomName() {
 }
 
 export const TRAIT_LABELS_ES = {
+  bodyBase: 'Cuerpo',
+  bodyProportion: 'Proporciones',
+  limbType: 'Extremidades',
+  headMerge: 'Unión Cabeza',
+  topAppendage: 'Apéndice Sup.',
+  tailType: 'Cola',
+  bellyShape: 'Barriga',
+  eyeShape: 'Forma Ojos',
+  pupilStyle: 'Pupilas',
+  mouthStyle: 'Boca',
+  surfaceType: 'Piel/Textura',
+  metabolism: 'Metabolismo',
+  longevity: 'Esperanza de Vida',
+  diseaseResilience: 'Inmunidad',
+  vitalityStorage: 'Reserva Vital',
+  // Backwards compatibility keys
   bodyType: 'Cuerpo',
   ears: 'Orejas',
   eyes: 'Ojos',
@@ -94,25 +110,84 @@ export const TRAIT_LABELS_ES = {
 };
 
 export const TRAIT_VALUE_LABELS_ES = {
+  // bodyBase
   round: 'redondo',
-  oval: 'ovalado',
-  squarish: 'cuadrado',
-  cloud: 'nube',
-  blob: 'gota',
+  bean: 'alubia',
+  pear: 'pera',
+  cloud: 'nubes',
+  blob: 'gota blob',
+  squishy: 'blandito',
+  // bodyProportion
+  balanced: 'equilibrada',
+  chubby: 'regordeta',
+  tall: 'esbelta alta',
+  tiny: 'diminuta',
+  // limbType
+  stubby: 'cortas',
+  soft: 'suaves',
+  long: 'largas',
+  springy: 'elásticas',
+  // headMerge
+  integrated: 'integrada',
+  'semi-separated': 'semi-separada',
+  // topAppendage
+  horns: 'cuernos',
+  antennae: 'antenas',
+  ears: 'orejitas',
+  sprouts: 'brotes',
+  none: 'sin apéndices',
+  // tailType
+  pom: 'pompón',
+  spike: 'espinas',
+  fluff: 'peluda',
+  // bellyShape
+  oval: 'ovalada',
+  heart: 'corazón',
+  teardrop: 'lágrima',
+  // eyeShape
+  sleepy: 'dormilones',
+  sparkle: 'brillantes',
+  wide: 'abiertos',
+  droopy: 'tristes caídos',
+  // pupilStyle
+  dot: 'puntos',
+  glossy: 'brillosas',
+  star: 'estrellas',
+  slit: 'felinas',
+  // mouthStyle
+  smile: 'sonrisa',
+  'open-smile': 'sonrisota',
+  'tiny-fang': 'colmillito',
+  shy: 'tímida',
+  // surfaceType
+  plush: 'peluche',
+  jelly: 'gelatina',
+  fuzzy: 'peluda',
+  matte: 'mate',
+  smooth: 'suave',
+  // metabolism
+  efficient: 'eficiente',
+  fast: 'rápido',
+  normal: 'normal',
+  // longevity
+  'long-lived': 'larga vida',
+  'short-lived': 'corta vida',
+  // diseaseResilience
+  'immune-boosted': 'inmune fuerte',
+  delicate: 'delicada',
+  // vitalityStorage
+  'high-vitality': 'vitalidad elevada',
+  
+  // Legacy values
   teddy: 'de oso',
   pointy: 'puntiagudas',
-  floppy: 'caidas',
-  long: 'largas',
+  floppy: 'caídas',
   fire: 'de fuego',
-  sparkle: 'brillantes',
-  sleepy: 'somnolientos',
-  normal: 'normales',
-  neon: 'de neon',
+  neon: 'de neón',
   ram: 'de carnero',
-  small: 'pequenos',
-  none: 'sin rasgo',
-  angel: 'de angel',
-  dragon: 'de dragon'
+  small: 'pequeños',
+  angel: 'de ángel',
+  dragon: 'de dragón'
 };
 
 export function getTraitLabel(trait) {
@@ -130,35 +205,94 @@ export function getTraitValueLabel(value, trait = '') {
 // ==========================================
 
 export const ALLELES_DOMINANCE = {
-  bodyType: {
+  bodyBase: {
     'R': { name: 'round', dominance: 3, label: 'Cuerpo Redondo (Dom. R)' },
-    'o': { name: 'oval', dominance: 1, label: 'Cuerpo Ovalado (Rec. o)' },
-    'q': { name: 'squarish', dominance: 1, label: 'Cuerpo Cuadrado (Rec. q)' },
+    'b': { name: 'bean', dominance: 1, label: 'Cuerpo Alubia (Rec. b)' },
+    'p': { name: 'pear', dominance: 1, label: 'Cuerpo Pera (Rec. p)' },
     'c': { name: 'cloud', dominance: 1, label: 'Cuerpo Nube (Rec. c)' },
-    'b': { name: 'blob', dominance: 1, label: 'Cuerpo Blob (Rec. b)' }
+    'o': { name: 'blob', dominance: 1, label: 'Cuerpo Blob (Rec. o)' },
+    's': { name: 'squishy', dominance: 1, label: 'Cuerpo Blando (Rec. s)' }
   },
-  ears: {
-    'T': { name: 'teddy', dominance: 3, label: 'Orejas de Oso (Dom. T)' },
-    'p': { name: 'pointy', dominance: 1, label: 'Orejas Puntiagudas (Rec. p)' },
-    'f': { name: 'floppy', dominance: 1, label: 'Orejas caídas (Rec. f)' },
-    'l': { name: 'long', dominance: 1, label: 'Orejas Largas (Rec. l)' }
+  bodyProportion: {
+    'B': { name: 'balanced', dominance: 3, label: 'Proporción Equilibrada (Dom. B)' },
+    'c': { name: 'chubby', dominance: 1, label: 'Proporción Regordeta (Rec. c)' },
+    't': { name: 'tall', dominance: 1, label: 'Proporción Alta (Rec. t)' },
+    'y': { name: 'tiny', dominance: 1, label: 'Proporción Diminuta (Rec. y)' }
   },
-  eyes: {
-    'F': { name: 'fire', dominance: 4, label: 'Ojos de Fuego (Prem. Dom. F)' },
-    'S': { name: 'sparkle', dominance: 3, label: 'Ojos Brillantes (Dom. S)' },
-    'y': { name: 'sleepy', dominance: 1, label: 'Ojos Somnolientos (Rec. y)' },
-    'n': { name: 'normal', dominance: 1, label: 'Ojos Normales (Rec. n)' }
+  limbType: {
+    'S': { name: 'stubby', dominance: 3, label: 'Extremidades Cortas (Dom. S)' },
+    'f': { name: 'soft', dominance: 1, label: 'Extremidades Suaves (Rec. f)' },
+    'l': { name: 'long', dominance: 1, label: 'Extremidades Largas (Rec. l)' },
+    'p': { name: 'springy', dominance: 1, label: 'Extremidades Elásticas (Rec. p)' }
   },
-  horns: {
-    'N': { name: 'neon', dominance: 4, label: 'Cuernos de neón (Prem. Dom. N)' },
-    'M': { name: 'ram', dominance: 3, label: 'Cuernos de carnero (Dom. M)' },
-    'A': { name: 'small', dominance: 2, label: 'Cuernos pequeños (Dom. A)' },
-    'h': { name: 'none', dominance: 1, label: 'Sin Cuernos (Rec. h)' }
+  headMerge: {
+    'I': { name: 'integrated', dominance: 3, label: 'Cabeza Integrada (Dom. I)' },
+    's': { name: 'semi-separated', dominance: 1, label: 'Cabeza Semi-separada (Rec. s)' }
   },
-  wings: {
-    'D': { name: 'dragon', dominance: 4, label: 'Alas de dragón (Prem. Dom. D)' },
-    'G': { name: 'angel', dominance: 3, label: 'Alas de ángel (Dom. G)' },
-    'w': { name: 'none', dominance: 1, label: 'Sin Alas (Rec. w)' }
+  topAppendage: {
+    'H': { name: 'horns', dominance: 4, label: 'Cuernos de Energía (Prem. Dom. H)' },
+    'a': { name: 'antennae', dominance: 3, label: 'Antenas Sensoriales (Dom. a)' },
+    'e': { name: 'ears', dominance: 2, label: 'Orejas de Animal (Dom. e)' },
+    's': { name: 'sprouts', dominance: 1, label: 'Brote de Hojas (Rec. s)' },
+    'n': { name: 'none', dominance: 1, label: 'Sin Apéndice (Rec. n)' }
+  },
+  tailType: {
+    'N': { name: 'none', dominance: 4, label: 'Sin Cola (Prem. Dom. N)' },
+    'p': { name: 'pom', dominance: 3, label: 'Cola de Pompón (Dom. p)' },
+    's': { name: 'spike', dominance: 2, label: 'Cola Espinada (Dom. s)' },
+    'f': { name: 'fluff', dominance: 1, label: 'Cola Peluda (Rec. f)' }
+  },
+  bellyShape: {
+    'O': { name: 'oval', dominance: 3, label: 'Barriga Ovalada (Dom. O)' },
+    'h': { name: 'heart', dominance: 1, label: 'Barriga de Corazón (Rec. h)' },
+    't': { name: 'teardrop', dominance: 1, label: 'Barriga de Gota (Rec. t)' },
+    'c': { name: 'cloud', dominance: 1, label: 'Barriga de Nube (Rec. c)' },
+    'n': { name: 'none', dominance: 1, label: 'Sin Barriga (Rec. n)' }
+  },
+  eyeShape: {
+    'R': { name: 'round', dominance: 3, label: 'Ojos Redondos (Dom. R)' },
+    's': { name: 'sleepy', dominance: 1, label: 'Ojos Dormilones (Rec. s)' },
+    'k': { name: 'sparkle', dominance: 1, label: 'Ojos Brillantes (Rec. k)' },
+    'w': { name: 'wide', dominance: 1, label: 'Ojos Abiertos (Rec. w)' },
+    'd': { name: 'droopy', dominance: 1, label: 'Ojos Caídos (Rec. d)' }
+  },
+  pupilStyle: {
+    'D': { name: 'dot', dominance: 3, label: 'Pupilas de Punto (Dom. D)' },
+    'g': { name: 'glossy', dominance: 1, label: 'Pupilas Brillantes (Rec. g)' },
+    's': { name: 'star', dominance: 1, label: 'Pupilas de Estrella (Rec. s)' },
+    'l': { name: 'slit', dominance: 1, label: 'Pupilas de Felino (Rec. l)' }
+  },
+  mouthStyle: {
+    'S': { name: 'smile', dominance: 3, label: 'Boca Sonriente (Dom. S)' },
+    'o': { name: 'open-smile', dominance: 1, label: 'Boca Abierta (Rec. o)' },
+    'f': { name: 'tiny-fang', dominance: 1, label: 'Boca con Colmillo (Rec. f)' },
+    'y': { name: 'shy', dominance: 1, label: 'Boca Tímida (Rec. y)' }
+  },
+  surfaceType: {
+    'S': { name: 'smooth', dominance: 3, label: 'Textura Suave (Dom. S)' },
+    'p': { name: 'plush', dominance: 1, label: 'Textura Peluche (Rec. p)' },
+    'j': { name: 'jelly', dominance: 1, label: 'Textura Gelatina (Rec. j)' },
+    'f': { name: 'fuzzy', dominance: 1, label: 'Textura Peluda (Rec. f)' },
+    'm': { name: 'matte', dominance: 1, label: 'Textura Mate (Rec. m)' }
+  },
+  metabolism: {
+    'E': { name: 'efficient', dominance: 3, label: 'Metabolismo Eficiente (Dom. E)' },
+    'f': { name: 'fast', dominance: 1, label: 'Metabolismo Rápido (Rec. f)' },
+    'n': { name: 'normal', dominance: 1, label: 'Metabolismo Normal (Rec. n)' }
+  },
+  longevity: {
+    'L': { name: 'long-lived', dominance: 3, label: 'Esperanza Larga (Dom. L)' },
+    's': { name: 'short-lived', dominance: 1, label: 'Esperanza Corta (Rec. s)' },
+    'n': { name: 'normal', dominance: 1, label: 'Esperanza Normal (Rec. n)' }
+  },
+  diseaseResilience: {
+    'I': { name: 'immune-boosted', dominance: 3, label: 'Inmunidad Fuerte (Dom. I)' },
+    'd': { name: 'delicate', dominance: 1, label: 'Inmunidad Delicada (Rec. d)' },
+    'n': { name: 'normal', dominance: 1, label: 'Inmunidad Normal (Rec. n)' }
+  },
+  vitalityStorage: {
+    'V': { name: 'high-vitality', dominance: 3, label: 'Reserva Vital Elevada (Dom. V)' },
+    'n': { name: 'normal', dominance: 1, label: 'Reserva Vital Normal (Rec. n)' }
   }
 };
 
@@ -166,14 +300,20 @@ export const ALLELES_DOMINANCE = {
 export function getPhenotype(genotype) {
   const phenotype = {};
   for (const trait in genotype) {
+    if (trait === 'colorGenes') continue;
     const alleles = genotype[trait];
     const alleleA = alleles[0];
     const alleleB = alleles[1];
     
-    const infoA = ALLELES_DOMINANCE[trait][alleleA];
-    const infoB = ALLELES_DOMINANCE[trait][alleleB];
+    const infoA = ALLELES_DOMINANCE[trait] ? ALLELES_DOMINANCE[trait][alleleA] : null;
+    const infoB = ALLELES_DOMINANCE[trait] ? ALLELES_DOMINANCE[trait][alleleB] : null;
     
-    if (infoA.dominance >= infoB.dominance) {
+    if (!infoA && !infoB) continue;
+    if (!infoA) {
+      phenotype[trait] = infoB.name;
+    } else if (!infoB) {
+      phenotype[trait] = infoA.name;
+    } else if (infoA.dominance >= infoB.dominance) {
       phenotype[trait] = infoA.name;
     } else {
       phenotype[trait] = infoB.name;
@@ -183,6 +323,7 @@ export function getPhenotype(genotype) {
 }
 
 export function getAlleleForName(locus, name) {
+  if (!ALLELES_DOMINANCE[locus]) return null;
   for (const allele in ALLELES_DOMINANCE[locus]) {
     if (ALLELES_DOMINANCE[locus][allele].name === name) {
       return allele;
@@ -191,38 +332,87 @@ export function getAlleleForName(locus, name) {
   return null;
 }
 
+// Fallback generators for old database records
+export function getFallbackAllele(trait) {
+  const defaults = {
+    bodyBase: 'R', bodyProportion: 'B', limbType: 'S', headMerge: 'I', topAppendage: 'n',
+    tailType: 'N', bellyShape: 'O', eyeShape: 'R', pupilStyle: 'D', mouthStyle: 'S',
+    surfaceType: 'S', metabolism: 'n', longevity: 'n', diseaseResilience: 'n', vitalityStorage: 'n'
+  };
+  return defaults[trait] || 'n';
+}
+
+export function getFallbackColorAllele(col) {
+  const defaults = {
+    huePrimary: [40, 50], satPrimary: [80, 80], lightPrimary: [60, 60],
+    hueSecondary: [30, 30], satSecondary: [70, 70], lightSecondary: [80, 80],
+    hueAccent: [140, 150], patternContrast: [0.2, 0.2]
+  };
+  return defaults[col] || [50, 50];
+}
+
+// Calculate expressed HSL colors by averaging inherited alleles
+export function getExpressedColorHSL(colorGenes, prefix) {
+  const hGene = colorGenes ? colorGenes[`hue${prefix}`] || [40, 40] : [40, 40];
+  const sGene = colorGenes ? colorGenes[`sat${prefix}`] || [80, 80] : [80, 80];
+  const lGene = colorGenes ? colorGenes[`light${prefix}`] || [60, 60] : [60, 60];
+  
+  const h = Math.round((hGene[0] + hGene[1]) / 2);
+  const s = Math.round((sGene[0] + sGene[1]) / 2);
+  const l = Math.round((lGene[0] + lGene[1]) / 2);
+  
+  return { h, s, l, str: `hsl(${h}, ${s}%, ${l}%)` };
+}
+
 // Calculate the percentage of Heterozygous Loci (genetic heterogeneity)
 export function getHeterozygosity(genotype) {
   let heterozygousLoci = 0;
-  const traits = ['bodyType', 'ears', 'eyes', 'horns', 'wings'];
+  const traits = ['bodyBase', 'bodyProportion', 'limbType', 'headMerge', 'topAppendage', 'tailType', 'bellyShape', 'eyeShape', 'pupilStyle', 'mouthStyle', 'surfaceType', 'metabolism', 'longevity', 'diseaseResilience', 'vitalityStorage'];
   traits.forEach(trait => {
-    if (genotype[trait][0] !== genotype[trait][1]) {
+    if (genotype[trait] && genotype[trait][0] !== genotype[trait][1]) {
       heterozygousLoci += 1;
     }
   });
-  return (heterozygousLoci / 5) * 100;
+  return Math.round((heterozygousLoci / traits.length) * 100);
 }
 
 // Perform Mendelian Segregation (Hybrid cross)
 export function mendelianCross(parentAGenotype, parentBGenotype) {
   const childGenotype = {};
-  const traits = ['bodyType', 'ears', 'eyes', 'horns', 'wings'];
+  const traits = ['bodyBase', 'bodyProportion', 'limbType', 'headMerge', 'topAppendage', 'tailType', 'bellyShape', 'eyeShape', 'pupilStyle', 'mouthStyle', 'surfaceType', 'metabolism', 'longevity', 'diseaseResilience', 'vitalityStorage'];
+  
   traits.forEach(trait => {
-    const alleleFromA = parentAGenotype[trait][Math.floor(Math.random() * 2)];
-    const alleleFromB = parentBGenotype[trait][Math.floor(Math.random() * 2)];
+    const parentAAlleles = parentAGenotype[trait] || [getFallbackAllele(trait), getFallbackAllele(trait)];
+    const parentBAlleles = parentBGenotype[trait] || [getFallbackAllele(trait), getFallbackAllele(trait)];
+    
+    const alleleFromA = parentAAlleles[Math.floor(Math.random() * 2)];
+    const alleleFromB = parentBAlleles[Math.floor(Math.random() * 2)];
     childGenotype[trait] = [alleleFromA, alleleFromB];
   });
+
+  // HSL Color Genes inheritance (averaging Hue, Saturation, Lightness alleles)
+  const colors = ['huePrimary', 'satPrimary', 'lightPrimary', 'hueSecondary', 'satSecondary', 'lightSecondary', 'hueAccent', 'patternContrast'];
+  childGenotype.colorGenes = {};
+  colors.forEach(col => {
+    const pAColor = parentAGenotype.colorGenes ? parentAGenotype.colorGenes[col] || getFallbackColorAllele(col) : getFallbackColorAllele(col);
+    const pBColor = parentBGenotype.colorGenes ? parentBGenotype.colorGenes[col] || getFallbackColorAllele(col) : getFallbackColorAllele(col);
+    
+    const alleleFromA = pAColor[Math.floor(Math.random() * 2)];
+    const alleleFromB = pBColor[Math.floor(Math.random() * 2)];
+    childGenotype.colorGenes[col] = [alleleFromA, alleleFromB];
+  });
+
   return childGenotype;
 }
 
 // Calculate Punnett Square probabilities based on Mendelian Segregation
 export function calculatePunnettSquare(parentAGenotype, parentBGenotype) {
   const probabilities = {};
-  const traits = ['bodyType', 'ears', 'eyes', 'horns', 'wings'];
+  const traits = ['bodyBase', 'bodyProportion', 'limbType', 'headMerge', 'topAppendage', 'tailType', 'bellyShape', 'eyeShape', 'pupilStyle', 'mouthStyle', 'surfaceType', 'metabolism', 'longevity', 'diseaseResilience', 'vitalityStorage'];
   
   traits.forEach(trait => {
-    const parentAAlleles = parentAGenotype[trait];
-    const parentBAlleles = parentBGenotype[trait];
+    const parentAAlleles = parentAGenotype[trait] || [getFallbackAllele(trait), getFallbackAllele(trait)];
+    const parentBAlleles = parentBGenotype[trait] || [getFallbackAllele(trait), getFallbackAllele(trait)];
     
     const combinations = [];
     parentAAlleles.forEach(alA => {
@@ -253,34 +443,51 @@ export function calculatePunnettSquare(parentAGenotype, parentBGenotype) {
 
 export function getMaxVitality(genotype) {
   const phenotype = getPhenotype(genotype);
-  if (phenotype.bodyType === 'round' || phenotype.bodyType === 'oval') {
-    return 120;
+  let baseVit = 100;
+  if (phenotype.bodyBase === 'round' || phenotype.bodyBase === 'squishy') {
+    baseVit = 120;
   }
-  return 100;
+  if (phenotype.vitalityStorage === 'high-vitality') {
+    baseVit += 20;
+  }
+  return baseVit;
 }
 
 export function getWokamonScale(genotype) {
   const phenotype = getPhenotype(genotype);
-  if (phenotype.bodyType === 'cloud' && (phenotype.horns === 'ram' || phenotype.horns === 'neon')) {
-    return 1.25; // Large scale
-  }
-  if (phenotype.bodyType === 'blob' || phenotype.ears === 'floppy') {
-    return 0.85; // Small scale
-  }
-  return 1.0; // Medium scale
+  if (phenotype.bodyProportion === 'tall') return 1.25;
+  if (phenotype.bodyProportion === 'tiny') return 0.85;
+  if (phenotype.bodyProportion === 'chubby') return 1.1;
+  return 1.0;
 }
 
-// Create a baby Wokamon Niño with homozygous low heterozygosity genes
+// Create a baby Wokamon Niño with homozygous sprouts and fluff
 export function createWokamonChild(name = 'Bebé Woki') {
   const genotype = {
-    bodyType: ['R', 'R'],
-    ears: ['T', 'T'],
-    eyes: ['n', 'n'],
-    horns: ['h', 'h'],
-    wings: ['w', 'w']
+    bodyBase: ['R', 'R'],
+    bodyProportion: ['B', 'B'],
+    limbType: ['S', 'S'],
+    headMerge: ['I', 'I'],
+    topAppendage: ['s', 's'], // Sprouts
+    tailType: ['f', 'f'], // Fluff
+    bellyShape: ['O', 'O'],
+    eyeShape: ['R', 'R'],
+    pupilStyle: ['D', 'D'],
+    mouthStyle: ['S', 'S'],
+    surfaceType: ['S', 'S'], // Smooth
+    metabolism: ['n', 'n'],
+    longevity: ['n', 'n'],
+    diseaseResilience: ['n', 'n'],
+    vitalityStorage: ['n', 'n'],
+    colorGenes: {
+      huePrimary: [40, 50], satPrimary: [80, 80], lightPrimary: [60, 60],
+      hueSecondary: [30, 30], satSecondary: [70, 70], lightSecondary: [80, 80],
+      hueAccent: [140, 150], patternContrast: [0.2, 0.2]
+    }
   };
   const phenotype = getPhenotype(genotype);
-  const maxVit = getMaxVitality(genotype);
+  const primaryColorHSL = getExpressedColorHSL(genotype.colorGenes, 'Primary');
+  const bellyColorHSL = getExpressedColorHSL(genotype.colorGenes, 'Secondary');
   
   return {
     id: generateId(),
@@ -291,7 +498,7 @@ export function createWokamonChild(name = 'Bebé Woki') {
     hunger: 100, 
     joy: 100,
     disease: 0,
-    vitality: maxVit,
+    vitality: 100,
     status: 'happy',
     stage: 'Niño',
     generation: 1,
@@ -299,13 +506,23 @@ export function createWokamonChild(name = 'Bebé Woki') {
     heterozygosity: getHeterozygosity(genotype),
     familyTree: null,
     genetics: {
-      bodyType: phenotype.bodyType,
-      ears: phenotype.ears,
-      eyes: phenotype.eyes,
-      horns: phenotype.horns,
-      wings: phenotype.wings,
-      primaryColor: '#ffcc00', 
-      bellyColor: '#ffe57f',
+      bodyBase: phenotype.bodyBase,
+      bodyProportion: phenotype.bodyProportion,
+      limbType: phenotype.limbType,
+      headMerge: phenotype.headMerge,
+      topAppendage: phenotype.topAppendage,
+      tailType: phenotype.tailType,
+      bellyShape: phenotype.bellyShape,
+      eyeShape: phenotype.eyeShape,
+      pupilStyle: phenotype.pupilStyle,
+      mouthStyle: phenotype.mouthStyle,
+      surfaceType: phenotype.surfaceType,
+      metabolism: phenotype.metabolism,
+      longevity: phenotype.longevity,
+      diseaseResilience: phenotype.diseaseResilience,
+      vitalityStorage: phenotype.vitalityStorage,
+      primaryColor: primaryColorHSL.str, 
+      bellyColor: bellyColorHSL.str,
       paintedPattern: null
     }
   };
@@ -317,6 +534,7 @@ const defaultState = {
     stepsToday: 0,
     totalEnergy: 10,
     crystals: 5,
+    stepsPendingCrystal: 0,
     isPremium: false,
     firstWalkDone: false,
     lastCareSettlementKey: null,
@@ -427,6 +645,7 @@ class GameState {
       const eggsColl = collection(db, 'users', uid, 'eggs');
       const eggsSnap = await getDocs(eggsColl);
       this.eggs = eggsSnap.docs.map(d => d.data());
+      this.eggs.forEach(e => this.normalizeWokamonLifecycle(e));
       
       // Load History
       const historyColl = collection(db, 'users', uid, 'history');
@@ -677,13 +896,14 @@ class GameState {
     const phenotype = getPhenotype(wokamon.genotype);
     let lifespan = BASE_LIFESPAN_DAYS;
 
-    if (phenotype.wings === 'angel' || phenotype.wings === 'dragon') lifespan += 4;
-    if (phenotype.bodyType === 'cloud' || phenotype.bodyType === 'blob') lifespan += 2;
-    if (phenotype.eyes === 'sparkle' || phenotype.eyes === 'fire') lifespan += 2;
-    if (phenotype.horns === 'ram' || phenotype.horns === 'neon') lifespan -= 2;
+    if (phenotype.topAppendage === 'horns') lifespan -= 2;
+    if (phenotype.surfaceType === 'jelly') lifespan += 2;
     if (wokamon.heterozygosity >= 80) lifespan += 3;
     else if (wokamon.heterozygosity >= 40) lifespan += 1;
-    if (wokamon.efficientMetabolism) lifespan += 2;
+
+    // Physiological locus
+    if (phenotype.longevity === 'long-lived') lifespan += 6;
+    if (phenotype.longevity === 'short-lived') lifespan -= 3;
 
     return Math.max(24, Math.min(42, lifespan));
   }
@@ -692,15 +912,76 @@ class GameState {
     const phenotype = getPhenotype(wokamon.genotype);
     let need = DAILY_STEPS_PER_WOKAMON;
 
-    if (wokamon.efficientMetabolism) need *= 0.85;
-    if (phenotype.bodyType === 'cloud' || phenotype.bodyType === 'blob') need *= 0.95;
     if (wokamon.heterozygosity >= 80) need *= 0.9;
+    
+    // Physiological locus
+    if (phenotype.metabolism === 'efficient') need *= 0.85;
+    if (phenotype.metabolism === 'fast') need *= 1.10;
 
     return Math.round(need / 50) * 50;
   }
 
   normalizeWokamonLifecycle(wokamon) {
     if (!wokamon) return null;
+
+    // Migration of legacy 5-loci save files if needed
+    if (!wokamon.genotype.bodyBase) {
+      const oldGeno = wokamon.genotype || {};
+      
+      const mapBodyBase = (val) => {
+        if (val === 'round' || val === 'oval') return 'R';
+        if (val === 'squarish') return 'b';
+        if (val === 'cloud') return 'c';
+        if (val === 'blob') return 'o';
+        if (val === 'squishy') return 's';
+        return 'R';
+      };
+
+      const mapTopAppendage = (val) => {
+        if (val === 'neon') return 'H';
+        if (val === 'ram') return 'e';
+        if (val === 'none' || !val) return 'n';
+        return 'n';
+      };
+
+      const mapEyeShape = (val) => {
+        if (val === 'round') return 'R';
+        if (val === 'sleepy') return 's';
+        if (val === 'sparkle') return 'k';
+        if (val === 'fire') return 'w';
+        return 'R';
+      };
+
+      const baseA = oldGeno.bodyType ? mapBodyBase(oldGeno.bodyType[0]) : 'R';
+      const baseB = oldGeno.bodyType ? mapBodyBase(oldGeno.bodyType[1]) : 'R';
+      const appA = oldGeno.horns ? mapTopAppendage(oldGeno.horns[0]) : 'n';
+      const appB = oldGeno.horns ? mapTopAppendage(oldGeno.horns[1]) : 'n';
+      const eyeA = oldGeno.eyes ? mapEyeShape(oldGeno.eyes[0]) : 'R';
+      const eyeB = oldGeno.eyes ? mapEyeShape(oldGeno.eyes[1]) : 'R';
+
+      wokamon.genotype = {
+        bodyBase: [baseA, baseB],
+        bodyProportion: ['B', 'B'],
+        limbType: ['S', 'S'],
+        headMerge: ['I', 'I'],
+        topAppendage: [appA, appB],
+        tailType: ['N', 'N'],
+        bellyShape: [oldGeno.bodyType && (oldGeno.bodyType[0] === 'round' || oldGeno.bodyType[0] === 'oval') ? 'O' : 'n', 'O'],
+        eyeShape: [eyeA, eyeB],
+        pupilStyle: ['D', 'D'],
+        mouthStyle: ['S', 'S'],
+        surfaceType: ['S', 'S'],
+        metabolism: ['n', 'n'],
+        longevity: ['n', 'n'],
+        diseaseResilience: ['n', 'n'],
+        vitalityStorage: ['n', 'n'],
+        colorGenes: {
+          huePrimary: [40, 42], satPrimary: [80, 80], lightPrimary: [60, 60],
+          hueSecondary: [30, 30], satSecondary: [70, 70], lightSecondary: [80, 80],
+          hueAccent: [140, 150], patternContrast: [0.2, 0.2]
+        }
+      };
+    }
 
     const maxVit = getMaxVitality(wokamon.genotype);
     const lifespan = this.getWokamonLifespan(wokamon);
@@ -710,9 +991,38 @@ class GameState {
     if (wokamon.disease === undefined) wokamon.disease = 0;
     if (wokamon.vitality === undefined) wokamon.vitality = maxVit;
     if (wokamon.dailyDeficitDays === undefined) wokamon.dailyDeficitDays = 0;
-    if (wokamon.dailyStepNeed === undefined) wokamon.dailyStepNeed = this.getDailyStepNeed(wokamon);
+    
+    // Recalculate daily step need and max vitality dynamically
     wokamon.maxVitality = maxVit;
     wokamon.lifespanDays = lifespan;
+    wokamon.dailyStepNeed = this.getDailyStepNeed(wokamon);
+
+    const phenotype = getPhenotype(wokamon.genotype);
+    wokamon.heterozygosity = getHeterozygosity(wokamon.genotype);
+
+    // Synchronize genetics parameters for rendering
+    if (!wokamon.genetics) wokamon.genetics = {};
+    wokamon.genetics.bodyBase = phenotype.bodyBase;
+    wokamon.genetics.bodyProportion = phenotype.bodyProportion;
+    wokamon.genetics.limbType = phenotype.limbType;
+    wokamon.genetics.headMerge = phenotype.headMerge;
+    wokamon.genetics.topAppendage = phenotype.topAppendage;
+    wokamon.genetics.tailType = phenotype.tailType;
+    wokamon.genetics.bellyShape = phenotype.bellyShape;
+    wokamon.genetics.eyeShape = phenotype.eyeShape;
+    wokamon.genetics.pupilStyle = phenotype.pupilStyle;
+    wokamon.genetics.mouthStyle = phenotype.mouthStyle;
+    wokamon.genetics.surfaceType = phenotype.surfaceType;
+    wokamon.genetics.metabolism = phenotype.metabolism;
+    wokamon.genetics.longevity = phenotype.longevity;
+    wokamon.genetics.diseaseResilience = phenotype.diseaseResilience;
+    wokamon.genetics.vitalityStorage = phenotype.vitalityStorage;
+
+    // Express colors from HSL color genes
+    const primHSL = getExpressedColorHSL(wokamon.genotype.colorGenes, 'Primary');
+    const bellHSL = getExpressedColorHSL(wokamon.genotype.colorGenes, 'Secondary');
+    wokamon.genetics.primaryColor = primHSL.str;
+    wokamon.genetics.bellyColor = bellHSL.str;
 
     if (wokamon.status === 'dead') {
       wokamon.stage = 'Fantasma';
@@ -760,6 +1070,18 @@ class GameState {
     const energyEarned = actualAdded;
     this.userStats.totalEnergy += energyEarned;
 
+    // Accumulate steps for earning crystals (1 crystal per 1000 steps)
+    if (this.userStats.stepsPendingCrystal === undefined) {
+      this.userStats.stepsPendingCrystal = 0;
+    }
+    this.userStats.stepsPendingCrystal += actualAdded;
+    const crystalsEarned = Math.floor(this.userStats.stepsPendingCrystal / 1000);
+    if (crystalsEarned > 0) {
+      this.userStats.crystals += crystalsEarned;
+      this.userStats.stepsPendingCrystal %= 1000;
+      this.logActivity('WALK', `¡Ganaste +${crystalsEarned} 💎 por caminar!`);
+    }
+
     if (actualAdded >= 200) {
       const action = source === 'mobile' ? 'Sincronizaste pasos' : 'Sumaste pasos';
       this.logActivity('WALK', `Pasos: ${action.toLowerCase()} +${actualAdded}.`);
@@ -781,11 +1103,10 @@ class GameState {
       if (this.matingState.stepsWalked >= this.matingState.stepsTarget) {
         this.matingState.stepsWalked = this.matingState.stepsTarget;
         
-        const roll = Math.random();
-        this.matingState.isViable = roll <= this.matingState.successChance;
+        this.matingState.isViable = true;
         
         this.matingState.stage = 'completed';
-        this.logActivity('BREED', `Caminata del huevo completada con viabilidad: ${this.matingState.isViable ? 'viable' : 'crítica'}.`);
+        this.logActivity('BREED', `Caminata del huevo completada con viabilidad: viable.`);
       }
     }
 
@@ -802,6 +1123,13 @@ class GameState {
     return { actualAdded, energyEarned, firstChildTriggered };
   }
 
+  addCrystalsManual(amount) {
+    if (!this.activeUser) return;
+    this.userStats.crystals += amount;
+    this.logActivity('WALK', `Añadiste +${amount} 💎 de forma manual (Modo Prueba).`);
+    this.saveAll();
+  }
+
   feedWokamon(id, energyAmount) {
     const wokamon = this.wokamons.find(w => w.id === id);
     if (!wokamon || wokamon.status === 'dead') return false;
@@ -812,18 +1140,18 @@ class GameState {
     this.userStats.totalEnergy -= energyAmount;
     wokamon.hunger = Math.min(100, wokamon.hunger + 30);
     
-    // Ears affect joy boost
-    const phenotype = getPhenotype(wokamon.genotype);
-    if (phenotype.ears === 'pointy' || phenotype.ears === 'floppy') {
-      wokamon.joy = Math.min(100, (wokamon.joy || 100) + 15);
-    }
-    
     // Growth multiplier modified by Hybrid Vigor (Variabilidad / Heterocigosis)
+    const phenotype = getPhenotype(wokamon.genotype);
     let growthMultiplier = 1.0;
     if (wokamon.heterozygosity >= 80) {
       growthMultiplier = 1.30; // +30% Hybrid Vigor
     } else if (wokamon.heterozygosity >= 40) {
       growthMultiplier = 1.15; // +15% Hybrid Vigor
+    }
+
+    // Physiology Metabolism locus
+    if (phenotype.metabolism === 'fast') {
+      growthMultiplier *= 1.20; // +20% fast metabolism growth rate
     }
     
     wokamon.growth += Math.floor((energyAmount / 5) * growthMultiplier);
@@ -1019,26 +1347,177 @@ class GameState {
       {
         name: 'Dragón Rojo',
         genetics: {
-          bodyType: 'blob', ears: 'pointy', eyes: 'fire', horns: 'ram', wings: 'dragon',
+          bodyBase: 'blob', bodyProportion: 'balanced', limbType: 'stubby', headMerge: 'integrated',
+          topAppendage: 'horns', tailType: 'spike', bellyShape: 'oval', eyeShape: 'wide',
+          pupilStyle: 'slit', mouthStyle: 'tiny-fang', surfaceType: 'smooth',
           primaryColor: '#e53935', bellyColor: '#ffb300', paintedPattern: null
         },
         genotype: {
-          bodyType: ['b', 'b'], ears: ['p', 'p'], eyes: ['F', 'n'], horns: ['M', 'h'], wings: ['D', 'w']
+          bodyBase: ['o', 'o'], bodyProportion: ['B', 'B'], limbType: ['S', 'S'], headMerge: ['I', 'I'],
+          topAppendage: ['H', 'H'], tailType: ['s', 's'], bellyShape: ['O', 'O'], eyeShape: ['w', 'w'],
+          pupilStyle: ['l', 'l'], mouthStyle: ['f', 'f'], surfaceType: ['S', 'S'],
+          metabolism: ['f', 'f'], longevity: ['L', 'L'], diseaseResilience: ['I', 'I'], vitalityStorage: ['n', 'n'],
+          colorGenes: {
+            huePrimary: [0, 10], satPrimary: [90, 90], lightPrimary: [50, 55],
+            hueSecondary: [45, 50], satSecondary: [95, 95], lightSecondary: [50, 50],
+            hueAccent: [200, 210], patternContrast: [0.15, 0.15]
+          }
         }
       },
       {
         name: 'Bunny Purpurina',
         genetics: {
-          bodyType: 'cloud', ears: 'long', eyes: 'sparkle', horns: 'none', wings: 'angel',
+          bodyBase: 'cloud', bodyProportion: 'balanced', limbType: 'long', headMerge: 'integrated',
+          topAppendage: 'ears', tailType: 'pom', bellyShape: 'heart', eyeShape: 'sparkle',
+          pupilStyle: 'glossy', mouthStyle: 'smile', surfaceType: 'plush',
           primaryColor: '#d81b60', bellyColor: '#f8bbd0', paintedPattern: null
         },
         genotype: {
-          bodyType: ['c', 'c'], ears: ['l', 'l'], eyes: ['S', 'y'], horns: ['h', 'h'], wings: ['G', 'w']
+          bodyBase: ['c', 'c'], bodyProportion: ['B', 'B'], limbType: ['l', 'l'], headMerge: ['I', 'I'],
+          topAppendage: ['e', 'e'], tailType: ['p', 'p'], bellyShape: ['h', 'h'], eyeShape: ['k', 'k'],
+          pupilStyle: ['g', 'g'], mouthStyle: ['S', 'S'], surfaceType: ['p', 'p'],
+          metabolism: ['E', 'E'], longevity: ['n', 'n'], diseaseResilience: ['n', 'n'], vitalityStorage: ['V', 'V'],
+          colorGenes: {
+            huePrimary: [320, 330], satPrimary: [80, 85], lightPrimary: [45, 50],
+            hueSecondary: [340, 345], satSecondary: [80, 80], lightSecondary: [85, 85],
+            hueAccent: [100, 110], patternContrast: [0.25, 0.25]
+          }
+        }
+      },
+      {
+        name: 'Panda Bambú',
+        genetics: {
+          bodyBase: 'round', bodyProportion: 'chubby', limbType: 'stubby', headMerge: 'integrated',
+          topAppendage: 'ears', tailType: 'pom', bellyShape: 'oval', eyeShape: 'sleepy',
+          pupilStyle: 'dot', mouthStyle: 'shy', surfaceType: 'plush',
+          primaryColor: '#37474f', bellyColor: '#ffffff', paintedPattern: null
+        },
+        genotype: {
+          bodyBase: ['R', 'R'], bodyProportion: ['c', 'c'], limbType: ['S', 'S'], headMerge: ['I', 'I'],
+          topAppendage: ['e', 'e'], tailType: ['p', 'p'], bellyShape: ['O', 'O'], eyeShape: ['s', 's'],
+          pupilStyle: ['D', 'D'], mouthStyle: ['y', 'y'], surfaceType: ['p', 'p'],
+          metabolism: ['E', 'E'], longevity: ['L', 'L'], diseaseResilience: ['n', 'n'], vitalityStorage: ['n', 'n'],
+          colorGenes: {
+            huePrimary: [200, 210], satPrimary: [10, 15], lightPrimary: [20, 25],
+            hueSecondary: [0, 0], satSecondary: [0, 0], lightSecondary: [98, 98],
+            hueAccent: [120, 130], patternContrast: [0.1, 0.1]
+          }
+        }
+      },
+      {
+        name: 'Gatito Galáctico',
+        genetics: {
+          bodyBase: 'pear', bodyProportion: 'balanced', limbType: 'springy', headMerge: 'semi-separated',
+          topAppendage: 'antennae', tailType: 'fluff', bellyShape: 'cloud', eyeShape: 'sparkle',
+          pupilStyle: 'star', mouthStyle: 'tiny-fang', surfaceType: 'jelly',
+          primaryColor: '#673ab7', bellyColor: '#e040fb', paintedPattern: null
+        },
+        genotype: {
+          bodyBase: ['p', 'p'], bodyProportion: ['B', 'B'], limbType: ['p', 'p'], headMerge: ['s', 's'],
+          topAppendage: ['a', 'a'], tailType: ['f', 'f'], bellyShape: ['c', 'c'], eyeShape: ['k', 'k'],
+          pupilStyle: ['s', 's'], mouthStyle: ['f', 'f'], surfaceType: ['j', 'j'],
+          metabolism: ['f', 'f'], longevity: ['n', 'n'], diseaseResilience: ['I', 'I'], vitalityStorage: ['V', 'V'],
+          colorGenes: {
+            huePrimary: [260, 270], satPrimary: [80, 85], lightPrimary: [40, 45],
+            hueSecondary: [290, 300], satSecondary: [90, 95], lightSecondary: [60, 65],
+            hueAccent: [40, 50], patternContrast: [0.2, 0.2]
+          }
+        }
+      },
+      {
+        name: 'Mochi Rosado',
+        genetics: {
+          bodyBase: 'squishy', bodyProportion: 'tiny', limbType: 'soft', headMerge: 'integrated',
+          topAppendage: 'none', tailType: 'none', bellyShape: 'none', eyeShape: 'round',
+          pupilStyle: 'dot', mouthStyle: 'smile', surfaceType: 'smooth',
+          primaryColor: '#ff8a80', bellyColor: '#ff8a80', paintedPattern: null
+        },
+        genotype: {
+          bodyBase: ['s', 's'], bodyProportion: ['y', 'y'], limbType: ['f', 'f'], headMerge: ['I', 'I'],
+          topAppendage: ['n', 'n'], tailType: ['N', 'N'], bellyShape: ['n', 'n'], eyeShape: ['R', 'R'],
+          pupilStyle: ['D', 'D'], mouthStyle: ['S', 'S'], surfaceType: ['S', 'S'],
+          metabolism: ['E', 'E'], longevity: ['n', 'n'], diseaseResilience: ['n', 'n'], vitalityStorage: ['n', 'n'],
+          colorGenes: {
+            huePrimary: [350, 360], satPrimary: [95, 95], lightPrimary: [70, 75],
+            hueSecondary: [350, 360], satSecondary: [95, 95], lightSecondary: [70, 75],
+            hueAccent: [180, 190], patternContrast: [0.1, 0.1]
+          }
+        }
+      },
+      {
+        name: 'Unicornio Cosmos',
+        genetics: {
+          bodyBase: 'blob', bodyProportion: 'tall', limbType: 'long', headMerge: 'integrated',
+          topAppendage: 'horns', tailType: 'fluff', bellyShape: 'heart', eyeShape: 'wide',
+          pupilStyle: 'star', mouthStyle: 'open-smile', surfaceType: 'jelly',
+          primaryColor: '#00e5ff', bellyColor: '#ffd600', paintedPattern: null
+        },
+        genotype: {
+          bodyBase: ['o', 'o'], bodyProportion: ['t', 't'], limbType: ['l', 'l'], headMerge: ['I', 'I'],
+          topAppendage: ['H', 'H'], tailType: ['f', 'f'], bellyShape: ['h', 'h'], eyeShape: ['w', 'w'],
+          pupilStyle: ['s', 's'], mouthStyle: ['o', 'o'], surfaceType: ['j', 'j'],
+          metabolism: ['f', 'f'], longevity: ['L', 'L'], diseaseResilience: ['I', 'I'], vitalityStorage: ['V', 'V'],
+          colorGenes: {
+            huePrimary: [185, 190], satPrimary: [95, 100], lightPrimary: [50, 50],
+            hueSecondary: [50, 55], satSecondary: [95, 100], lightSecondary: [50, 55],
+            hueAccent: [300, 310], patternContrast: [0.3, 0.3]
+          }
         }
       }
     ];
 
-    const partner = friendWokamonTypes[Math.floor(Math.random() * friendWokamonTypes.length)];
+    const basePartner = friendWokamonTypes[Math.floor(Math.random() * friendWokamonTypes.length)];
+    const partner = JSON.parse(JSON.stringify(basePartner));
+    
+    // Dynamic randomization of genotype for exciting breeding variety!
+    const randomizedGenotype = {};
+    for (const locus in ALLELES_DOMINANCE) {
+      const alleles = Object.keys(ALLELES_DOMINANCE[locus]);
+      const alleleA = alleles[Math.floor(Math.random() * alleles.length)];
+      const alleleB = alleles[Math.floor(Math.random() * alleles.length)];
+      randomizedGenotype[locus] = [alleleA, alleleB];
+    }
+    
+    // Randomize HSL color genes
+    randomizedGenotype.colorGenes = {
+      huePrimary: [Math.floor(Math.random() * 360), Math.floor(Math.random() * 360)],
+      satPrimary: [50 + Math.floor(Math.random() * 50), 50 + Math.floor(Math.random() * 50)],
+      lightPrimary: [35 + Math.floor(Math.random() * 40), 35 + Math.floor(Math.random() * 40)],
+      hueSecondary: [Math.floor(Math.random() * 360), Math.floor(Math.random() * 360)],
+      satSecondary: [50 + Math.floor(Math.random() * 50), 50 + Math.floor(Math.random() * 50)],
+      lightSecondary: [40 + Math.floor(Math.random() * 45), 40 + Math.floor(Math.random() * 45)],
+      hueAccent: [Math.floor(Math.random() * 360), Math.floor(Math.random() * 360)],
+      patternContrast: [parseFloat((0.1 + Math.random() * 0.3).toFixed(2)), parseFloat((0.1 + Math.random() * 0.3).toFixed(2))]
+    };
+    
+    partner.genotype = randomizedGenotype;
+    
+    // Recalculate phenotype and expressed color values
+    const newPhenotype = getPhenotype(randomizedGenotype);
+    const primHSL = getExpressedColorHSL(randomizedGenotype.colorGenes, 'Primary');
+    const bellHSL = getExpressedColorHSL(randomizedGenotype.colorGenes, 'Secondary');
+    
+    partner.genetics = {
+      bodyBase: newPhenotype.bodyBase,
+      bodyProportion: newPhenotype.bodyProportion,
+      limbType: newPhenotype.limbType,
+      headMerge: newPhenotype.headMerge,
+      topAppendage: newPhenotype.topAppendage,
+      tailType: newPhenotype.tailType,
+      bellyShape: newPhenotype.bellyShape,
+      eyeShape: newPhenotype.eyeShape,
+      pupilStyle: newPhenotype.pupilStyle,
+      mouthStyle: newPhenotype.mouthStyle,
+      surfaceType: newPhenotype.surfaceType,
+      metabolism: newPhenotype.metabolism,
+      longevity: newPhenotype.longevity,
+      diseaseResilience: newPhenotype.diseaseResilience,
+      vitalityStorage: newPhenotype.vitalityStorage,
+      primaryColor: primHSL.str,
+      bellyColor: bellHSL.str,
+      paintedPattern: null
+    };
+
     const successChance = Math.min(1.0, stepsTarget / 10000);
 
     this.matingState = {
@@ -1139,6 +1618,7 @@ class GameState {
       }
     };
 
+    this.normalizeWokamonLifecycle(newEgg);
     this.eggs.push(newEgg);
     
     // Reset mating
@@ -1183,16 +1663,29 @@ class GameState {
       familyTree: egg.familyTree,
       efficientMetabolism: egg.efficientMetabolism,
       genetics: {
-        bodyType: phenotype.bodyType,
-        ears: phenotype.ears,
-        eyes: phenotype.eyes,
-        horns: phenotype.horns,
-        wings: phenotype.wings,
+        bodyBase: phenotype.bodyBase || 'round',
+        bodyProportion: phenotype.bodyProportion || 'balanced',
+        limbType: phenotype.limbType || 'stubby',
+        headMerge: phenotype.headMerge || 'integrated',
+        topAppendage: phenotype.topAppendage || 'none',
+        tailType: phenotype.tailType || 'none',
+        bellyShape: phenotype.bellyShape || 'oval',
+        eyeShape: phenotype.eyeShape || 'round',
+        pupilStyle: phenotype.pupilStyle || 'dot',
+        mouthStyle: phenotype.mouthStyle || 'smile',
+        surfaceType: phenotype.surfaceType || 'smooth',
+        metabolism: phenotype.metabolism || 'normal',
+        longevity: phenotype.longevity || 'normal',
+        diseaseResilience: phenotype.diseaseResilience || 'normal',
+        vitalityStorage: phenotype.vitalityStorage || 'normal',
         primaryColor: egg.genetics?.primaryColor || '#ffcc00',
         bellyColor: egg.genetics?.bellyColor || '#ffe57f',
         paintedPattern: null
       }
     };
+
+    // Normalize so all gameplay values, step requirements, lifespan, HSL colors are properly synced/set
+    this.normalizeWokamonLifecycle(baby);
 
     this.eggs = this.eggs.filter(e => e.id !== eggId);
     this.wokamons.push(baby);
@@ -1328,20 +1821,36 @@ class GameState {
       const maxVit = getMaxVitality(wokamon.genotype);
       const lifespan = this.getWokamonLifespan(wokamon);
       const missingRatio = 1 - coverageRatio;
+      const phenotype = getPhenotype(wokamon.genotype);
 
       if (coverageRatio >= 1) {
         wokamon.dailyDeficitDays = 0;
         wokamon.hunger = Math.min(100, (wokamon.hunger || 100) + 12);
         wokamon.joy = Math.min(100, (wokamon.joy || 100) + 8);
-        wokamon.disease = Math.max(0, (wokamon.disease || 0) - 6);
+        
+        // Sickness decay with diseaseResilience
+        let diseaseDecay = 6;
+        if (phenotype.diseaseResilience === 'immune-boosted') diseaseDecay = 10;
+        wokamon.disease = Math.max(0, (wokamon.disease || 0) - diseaseDecay);
+        
         wokamon.vitality = Math.min(maxVit, (wokamon.vitality || maxVit) + 5);
       } else {
         wokamon.dailyDeficitDays = (wokamon.dailyDeficitDays || 0) + 1;
-        wokamon.hunger = Math.max(0, (wokamon.hunger || 100) - Math.ceil(22 * missingRatio));
+        
+        // Hunger loss with metabolism
+        let hungerLoss = Math.ceil(22 * missingRatio);
+        if (phenotype.metabolism === 'efficient') hungerLoss = Math.ceil(15 * missingRatio);
+        if (phenotype.metabolism === 'fast') hungerLoss = Math.ceil(27 * missingRatio);
+        
+        wokamon.hunger = Math.max(0, (wokamon.hunger || 100) - hungerLoss);
         wokamon.joy = Math.max(0, (wokamon.joy || 100) - Math.ceil(16 * missingRatio));
 
+        // Sickness accumulation with diseaseResilience
         if (wokamon.dailyDeficitDays >= 2) {
-          wokamon.disease = Math.min(100, (wokamon.disease || 0) + Math.ceil(7 * missingRatio));
+          let diseaseAccum = Math.ceil(7 * missingRatio);
+          if (phenotype.diseaseResilience === 'delicate') diseaseAccum = Math.ceil(10 * missingRatio);
+          if (phenotype.diseaseResilience === 'immune-boosted') diseaseAccum = Math.ceil(4 * missingRatio);
+          wokamon.disease = Math.min(100, (wokamon.disease || 0) + diseaseAccum);
         }
 
         if (wokamon.dailyDeficitDays >= 4 || wokamon.hunger <= 10 || wokamon.disease >= 65) {
@@ -1400,6 +1909,37 @@ class GameState {
   tickGameTime() {
     // El tiempo ya no avanza en segundo plano; se controla con "Pasar 1 día".
     return false;
+  }
+
+  mutateChromaticRadiation(eggId) {
+    if (this.userStats.crystals < 3) return false;
+    const egg = this.eggs.find(e => e.id === eggId);
+    if (!egg) return false;
+
+    // Mutate color genes to a fun random surprise combination
+    egg.genotype.colorGenes = {
+      huePrimary: [Math.floor(Math.random() * 360), Math.floor(Math.random() * 360)],
+      satPrimary: [Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60],
+      lightPrimary: [Math.floor(Math.random() * 30) + 40, Math.floor(Math.random() * 30) + 40],
+      
+      hueSecondary: [Math.floor(Math.random() * 360), Math.floor(Math.random() * 360)],
+      satSecondary: [Math.floor(Math.random() * 40) + 60, Math.floor(Math.random() * 40) + 60],
+      lightSecondary: [Math.floor(Math.random() * 30) + 55, Math.floor(Math.random() * 30) + 55],
+      
+      hueAccent: [Math.floor(Math.random() * 360), Math.floor(Math.random() * 360)],
+      patternContrast: [parseFloat((Math.random() * 0.25 + 0.1).toFixed(2)), parseFloat((Math.random() * 0.25 + 0.1).toFixed(2))]
+    };
+
+    // Recalculate colors
+    const primHSL = getExpressedColorHSL(egg.genotype.colorGenes, 'Primary');
+    const bellHSL = getExpressedColorHSL(egg.genotype.colorGenes, 'Secondary');
+    egg.genetics.primaryColor = primHSL.str;
+    egg.genetics.bellyColor = bellHSL.str;
+
+    this.userStats.crystals -= 3;
+    this.logActivity('SHOP_BUY', `Radiación Cromática: Se mutaron aleatoriamente los colores de ${egg.name}.`);
+    this.saveAll();
+    return true;
   }
 
   resetAll() {

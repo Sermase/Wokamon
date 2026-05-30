@@ -11,6 +11,13 @@ export class GeneticsLab {
     this.lockedMode = options.mode || null;
     this.activeSubTab = this.lockedMode === 'dex' ? 'dex' : 'lab';
     
+    // Persistent Collapsible Genetics Folders (Collapsed by default!)
+    this.expandedGroups = {
+      morphology: false,
+      physiognomy: false,
+      physiology: false
+    };
+    
     // Canvas Paint Variables
     this.currentColor = '#ffcc00';
     this.currentBrushSize = 12;
@@ -701,20 +708,47 @@ export class GeneticsLab {
     const targetObj = activeTarget.obj;
     const genotype = targetObj.genotype;
 
-    if (!this.selectedLocus) {
-      this.selectedLocus = 'bodyType';
+    if (!this.selectedLocus || this.selectedLocus === 'bodyType') {
+      this.selectedLocus = 'bodyBase';
     }
     if (this.selectedAlleleIndex === undefined) {
       this.selectedAlleleIndex = 0;
     }
 
-    const locusLabels = { bodyType: 'Cuerpo', ears: 'Orejas', eyes: 'Ojos', horns: 'Cuernos', wings: 'Alas' };
+    const locusLabels = {
+      bodyBase: 'Silueta Cuerpo',
+      bodyProportion: 'Proporciones',
+      limbType: 'Extremidades',
+      headMerge: 'Unión Cabeza',
+      topAppendage: 'Apéndice Sup.',
+      tailType: 'Cola',
+      bellyShape: 'Barriga',
+      eyeShape: 'Forma Ojos',
+      pupilStyle: 'Pupilas',
+      mouthStyle: 'Boca',
+      surfaceType: 'Piel/Textura',
+      metabolism: 'Metabolismo',
+      longevity: 'Longevidad',
+      diseaseResilience: 'Inmunidad',
+      vitalityStorage: 'Reserva Vital'
+    };
+
     const locusHelps = {
-      bodyType: 'Locus del Cuerpo: determina la morfología general y peso del Wokamon.',
-      ears: 'Locus de las Orejas: regula la audición y la expresión de emociones.',
-      eyes: 'Locus de los Ojos: influye en la agudeza visual y la producción de cristales.',
-      horns: 'Locus de los Cuernos: almacena energía electromagnética de los pasos.',
-      wings: 'Locus de las Alas: proporciona equilibrio aerodinámico y bonificación de longevidad.'
+      bodyBase: 'Silueta base y contorno del cuerpo (redondo, alubia, pera, nube, etc.).',
+      bodyProportion: 'Escala y proporción corporal (equilibrada, regordeta, alta, diminuta).',
+      limbType: 'Longitud y diseño de extremidades (cortas, suaves, largas, elásticas).',
+      headMerge: 'Nivel de fusión/unión de la cabeza respecto al tronco.',
+      topAppendage: 'Apéndice de la cabeza (cuernos, antenas, orejas de animal, brotes o sin apéndice).',
+      tailType: 'Forma y tipo de cola (sin cola, pompón, espinas, peluda).',
+      bellyShape: 'Forma del patrón del vientre (oval, corazón, gota, nube, o sin barriga).',
+      eyeShape: 'Diseño y expresión Kawaii de los ojos (redondos, dormilones, brillantes, abiertos, caídos).',
+      pupilStyle: 'Reflejos y tipo de pupilas (punto, brillante, estrella, felina).',
+      mouthStyle: 'Forma y expresión de la boca (sonrisa, abierta, colmillo, tímida).',
+      surfaceType: 'Volumen 3D y textura de la piel (suave, peluche, gelatina, peluda, mate).',
+      metabolism: 'Tasa metabólica: eficiente (-15% pasos), rápido (+20% crecimiento y +10% pasos), o normal.',
+      longevity: 'Esperanza de vida máxima: larga (+6 días de vida útil), corta (-3 días), o normal.',
+      diseaseResilience: 'Inmunidad al enfermar: fuerte (cura 40% más rápido), delicada (+30% susceptibilidad), o normal.',
+      vitalityStorage: 'Reserva de vitalidad máxima: elevada (+20 de capacidad vital, total 140) o normal.'
     };
 
     const crystals = store.loadState().user.crystals || 0;
@@ -752,6 +786,33 @@ export class GeneticsLab {
           </div>
         </div>
 
+        <!-- CONSOLA DE RADIACIÓN CROMÁTICA -->
+        <div class="chromatic-radiation-console glass-panel-inner" style="padding: 1rem; border-radius: 12px; border: 1.5px solid #ff007f; background: rgba(255, 0, 127, 0.04); display: flex; flex-direction: column; gap: 0.5rem; box-shadow: 0 0 15px rgba(255, 0, 127, 0.15);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 0, 127, 0.2); padding-bottom: 0.4rem;">
+            <strong style="color: #fff; font-size: 0.82rem; display: flex; align-items: center; gap: 0.35rem;">
+              🎨 Radiación Cromática (Mutación de Color)
+            </strong>
+            <span style="font-size: 0.65rem; color: #ff007f; font-weight: 800; letter-spacing: 0.5px;">CRISPR-HSL SHUFFLE</span>
+          </div>
+          <p style="font-size: 0.68rem; color: var(--text-grey); line-height: 1.4; margin: 0.2rem 0;">
+            Aplica una ráfaga controlada de radiación gamma sobre el embrión para alterar sus genes HSL cromáticos. ¡Generará colores de base, vientre y contraste totalmente impredecibles y únicos!
+          </p>
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.2rem;">
+            <div style="display: flex; flex-direction: column; gap: 0.1rem;">
+              <span style="font-size: 0.6rem; color: var(--text-grey);">Colores actuales del Huevo:</span>
+              <div style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.15rem;">
+                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${targetObj.genetics.primaryColor}; border: 1px solid rgba(255,255,255,0.2);"></span>
+                <span style="font-size: 0.65rem; font-family: monospace; color: #fff;">P: ${targetObj.genetics.primaryColor}</span>
+                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${targetObj.genetics.bellyColor}; border: 1px solid rgba(255,255,255,0.2); margin-left: 0.4rem;"></span>
+                <span style="font-size: 0.65rem; font-family: monospace; color: #fff;">V: ${targetObj.genetics.bellyColor}</span>
+              </div>
+            </div>
+            <button class="btn" id="btn-chromatic-mutate" ${crystals < 3 ? 'disabled' : ''} style="background: linear-gradient(135deg, #ff007f, #7f00ff); color: #fff; font-weight: 800; font-size: 0.72rem; padding: 0.55rem 1rem; border-radius: 8px; border: none; cursor: pointer; box-shadow: 0 0 10px rgba(255, 0, 127, 0.4); display: flex; align-items: center; gap: 0.35rem; transition: transform 0.2s;">
+              <span>💥 Mutar Colores</span> <strong>(3 💎)</strong>
+            </button>
+          </div>
+        </div>
+
         <!-- DNA Loci Inspector Table -->
         <div class="glass-panel-inner" style="padding: 1.15rem; display: flex; flex-direction: column; gap: 0.75rem;">
           <strong style="font-size: 0.82rem; color: #fff; display: flex; justify-content: space-between; align-items: center;">
@@ -761,7 +822,7 @@ export class GeneticsLab {
 
           <div class="mendelian-table border-glow">
             <div class="table-header">
-              <span>Locus <span class="help-btn" data-help="Locus: El lugar exacto en el cromosoma donde se localiza el gen.">?</span></span>
+              <span>Locus <span class="help-btn" data-help="El lugar exacto en el cromosoma donde se localiza el gen.">?</span></span>
               <span>Alelo 1 <span class="help-btn" data-help="Alelo 1: Primer gen heredado (materno o paterno). Haz clic para editarlo.">?</span></span>
               <span>Alelo 2 <span class="help-btn" data-help="Alelo 2: Segundo gen heredado (materno o paterno). Haz clic para editarlo.">?</span></span>
               <span>Expresión (Fenotipo) <span class="help-btn" data-help="Fenotipo: El rasgo físico visible resultante de la dominancia entre los alelos.">?</span></span>
@@ -769,43 +830,88 @@ export class GeneticsLab {
             </div>
 
             <div class="table-body">
-              ${['bodyType', 'ears', 'eyes', 'horns', 'wings'].map(locus => {
-                const alleleA = genotype[locus][0];
-                const alleleB = genotype[locus][1];
+              ${(() => {
+                const groups = [
+                  {
+                    id: 'morphology',
+                    label: '📐 Morfología (Cuerpo y Forma)',
+                    loci: ['bodyBase', 'bodyProportion', 'limbType', 'headMerge', 'topAppendage', 'tailType', 'bellyShape']
+                  },
+                  {
+                    id: 'physiognomy',
+                    label: '👁️ Fisonomía y Piel (Aspecto)',
+                    loci: ['eyeShape', 'pupilStyle', 'mouthStyle', 'surfaceType']
+                  },
+                  {
+                    id: 'physiology',
+                    label: '⚡ Fisiología (Gameplay)',
+                    loci: ['metabolism', 'longevity', 'diseaseResilience', 'vitalityStorage']
+                  }
+                ];
 
-                const infoA = ALLELES_DOMINANCE[locus][alleleA];
-                const infoB = ALLELES_DOMINANCE[locus][alleleB];
+                return groups.map(grp => {
+                  const isExpanded = this.expandedGroups[grp.id] !== false;
+                  return `
+                    <div class="genetics-group-folder">
+                      <button type="button" class="group-folder-header-lab" data-toggle-group="${grp.id}" style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.75rem; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; margin-top: 0.4rem; color: #fff; font-weight: 700; cursor: pointer; text-align: left; transition: background 0.2s; font-size: 0.72rem; border-left: 3px solid ${grp.id === 'morphology' ? '#4caf50' : grp.id === 'physiognomy' ? '#2196f3' : '#ff9800'};">
+                        <span>${grp.label}</span>
+                        <span style="font-size: 0.55rem; color: var(--text-grey);">${isExpanded ? '▼' : '▶'}</span>
+                      </button>
+                      
+                      <div class="group-folder-content" style="display: ${isExpanded ? 'block' : 'none'};">
+                        ${grp.loci.map(locus => {
+                          const genotypeLocus = genotype[locus];
+                          const alleleA = genotypeLocus ? genotypeLocus[0] : (Object.keys(ALLELES_DOMINANCE[locus])[0]);
+                          const alleleB = genotypeLocus ? genotypeLocus[1] : (Object.keys(ALLELES_DOMINANCE[locus])[0]);
 
-                const isA_Dominant = infoA.dominance >= infoB.dominance;
-                const domAllele = isA_Dominant ? alleleA : alleleB;
-                const recAllele = isA_Dominant ? alleleB : alleleA;
+                          let infoA = ALLELES_DOMINANCE[locus][alleleA];
+                          let infoB = ALLELES_DOMINANCE[locus][alleleB];
 
-                const isHomozygous = alleleA === alleleB;
-                const domLabel = getTraitValueLabel(ALLELES_DOMINANCE[locus][domAllele].name, locus);
+                          if (!infoA || !infoB) {
+                            const defaultAllele = Object.keys(ALLELES_DOMINANCE[locus])[0];
+                            if (!infoA) infoA = ALLELES_DOMINANCE[locus][defaultAllele];
+                            if (!infoB) infoB = ALLELES_DOMINANCE[locus][defaultAllele];
+                          }
 
-                const isLocusSelected = this.selectedLocus === locus;
+                          const isA_Dominant = infoA.dominance >= infoB.dominance;
+                          const domAllele = isA_Dominant ? alleleA : alleleB;
+                          const recAllele = isA_Dominant ? alleleB : alleleA;
 
-                return `
-                  <div class="table-row table-row-selectable ${isLocusSelected ? 'row-active' : ''}" data-locus="${locus}">
-                    <strong class="locus-lbl" style="color: ${isLocusSelected ? 'var(--primary-accent)' : '#fff'};">${locusLabels[locus]}</strong>
-                    
-                    <span class="allele-cell-btn ${isLocusSelected && this.selectedAlleleIndex === 0 ? 'allele-cell-active' : ''}" data-allele-idx="0">
-                      [ ${alleleA} ]
-                    </span>
-                    <span class="allele-cell-btn ${isLocusSelected && this.selectedAlleleIndex === 1 ? 'allele-cell-active' : ''}" data-allele-idx="1">
-                      [ ${alleleB} ]
-                    </span>
+                          const isHomozygous = alleleA === alleleB;
+                          const resolvedDom = ALLELES_DOMINANCE[locus][domAllele] || infoA;
+                          const domLabel = getTraitValueLabel(resolvedDom.name, locus);
 
-                    <span class="pheno-val" style="font-weight: 700; color: #fff;">${domLabel}</span>
-                    
-                    <span class="hidden-val">
-                      <span class="zygo-badge ${isHomozygous ? 'badge-homo' : 'badge-hetero'}">
-                        ${isHomozygous ? 'Homocigoto' : 'Heterocigoto'}
-                      </span>
-                    </span>
-                  </div>
-                `;
-              }).join('')}
+                          const isLocusSelected = this.selectedLocus === locus;
+
+                          return `
+                            <div class="table-row table-row-selectable ${isLocusSelected ? 'row-active' : ''}" data-locus="${locus}">
+                              <strong class="locus-lbl" style="color: ${isLocusSelected ? 'var(--primary-accent)' : '#fff'}; display: flex; align-items: center; gap: 0.25rem;">
+                                ${locusLabels[locus]}
+                                <span class="help-btn" data-help="${locusHelps[locus]}">?</span>
+                              </strong>
+                              
+                              <span class="allele-cell-btn ${isLocusSelected && this.selectedAlleleIndex === 0 ? 'allele-cell-active' : ''}" data-allele-idx="0">
+                                [ ${alleleA} ]
+                              </span>
+                              <span class="allele-cell-btn ${isLocusSelected && this.selectedAlleleIndex === 1 ? 'allele-cell-active' : ''}" data-allele-idx="1">
+                                [ ${alleleB} ]
+                              </span>
+
+                              <span class="pheno-val" style="font-weight: 700; color: #fff;">${domLabel}</span>
+                              
+                              <span class="hidden-val">
+                                <span class="zygo-badge ${isHomozygous ? 'badge-homo' : 'badge-hetero'}">
+                                  ${isHomozygous ? 'Homocigoto' : 'Heterocigoto'}
+                                </span>
+                              </span>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    </div>
+                  `;
+                }).join('');
+              })()}
             </div>
           </div>
         </div>
@@ -818,7 +924,7 @@ export class GeneticsLab {
                 🧬 Consola CRISPR-Cas9
               </strong>
               <p style="font-size: 0.65rem; color: var(--text-grey); margin-top: 0.1rem;">
-                Cortando locus <strong>${locusLabels[this.selectedLocus]}</strong> > <strong>Alelo ${this.selectedAlleleIndex + 1}</strong> (Actual: <strong style="color: var(--primary-accent);">${genotype[this.selectedLocus][this.selectedAlleleIndex]}</strong>).
+                Cortando locus <strong>${locusLabels[this.selectedLocus] || this.selectedLocus}</strong> > <strong>Alelo ${this.selectedAlleleIndex + 1}</strong> (Actual: <strong style="color: var(--primary-accent);">${genotype[this.selectedLocus] ? genotype[this.selectedLocus][this.selectedAlleleIndex] : ''}</strong>).
               </p>
             </div>
             <div class="crispr-crystals-badge glass-panel-inner" style="padding: 0.25rem 0.6rem; border-radius: 8px; font-weight: 800; font-size: 0.72rem; color: #ffb300; display: flex; align-items: center; gap: 0.25rem; border: 1px solid rgba(255, 179, 0, 0.2); background: rgba(0,0,0,0.15);">
@@ -836,10 +942,10 @@ export class GeneticsLab {
               </span>
               
               <div class="crispr-gene-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 0.5rem;">
-                ${Object.keys(ALLELES_DOMINANCE[this.selectedLocus]).map(alleleLetter => {
+                ${Object.keys(ALLELES_DOMINANCE[this.selectedLocus] || {}).map(alleleLetter => {
                   const alleleInfo = ALLELES_DOMINANCE[this.selectedLocus][alleleLetter];
                   const isUnlocked = unlockedGenes.includes(alleleInfo.name);
-                  const isCurrent = genotype[this.selectedLocus][this.selectedAlleleIndex] === alleleLetter;
+                  const isCurrent = genotype[this.selectedLocus] && genotype[this.selectedLocus][this.selectedAlleleIndex] === alleleLetter;
                   const canMutate = isUnlocked && !isCurrent && crystals >= 10;
                   
                   if (!isUnlocked) return ''; // Render locked genes below
@@ -870,7 +976,7 @@ export class GeneticsLab {
               </span>
 
               <div class="crispr-gene-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 0.5rem;">
-                ${Object.keys(ALLELES_DOMINANCE[this.selectedLocus]).map(alleleLetter => {
+                ${Object.keys(ALLELES_DOMINANCE[this.selectedLocus] || {}).map(alleleLetter => {
                   const alleleInfo = ALLELES_DOMINANCE[this.selectedLocus][alleleLetter];
                   const isUnlocked = unlockedGenes.includes(alleleInfo.name);
                   const canUnlock = !isUnlocked && crystals >= 25;
@@ -907,6 +1013,34 @@ export class GeneticsLab {
       this.selectedTargetType = type;
       this.render();
     });
+
+    // Hook Collapsible group toggles in Lab
+    subContentContainer.querySelectorAll('[data-toggle-group]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const grpId = btn.dataset.toggleGroup;
+        this.expandedGroups[grpId] = !this.expandedGroups[grpId];
+        this.render();
+      });
+    });
+
+    // Hook Chromatic Mutation button
+    const chromaticBtn = subContentContainer.querySelector('#btn-chromatic-mutate');
+    if (chromaticBtn) {
+      chromaticBtn.addEventListener('click', () => {
+        const success = store.mutateChromaticRadiation(this.selectedTargetId);
+        if (success) {
+          this.playHatchSuccessSound();
+          const toast = document.getElementById('toast-notification-root');
+          if (toast) {
+            toast.className = 'toast-show';
+            toast.textContent = `🎨 Cromática: ¡Genes de color re-secuenciados con éxito!`;
+            setTimeout(() => toast.className = '', 2500);
+          }
+          this.render();
+        }
+      });
+    }
 
     // Hook Locus selecting rows & cells
     subContentContainer.querySelectorAll('.table-row-selectable').forEach(row => {
@@ -983,7 +1117,7 @@ export class GeneticsLab {
         helpOverlay.innerHTML = `
           <div class="help-popup-content glass-panel-inner pad-md text-center flex-center flex-col" style="max-width: 280px; gap: 0.5rem; background: rgba(255, 255, 255, 0.98); border: 2px solid var(--primary-accent); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
             <h4 style="font-weight: 800; color: var(--primary-accent); margin-bottom: 0.15rem;">Genética de Wokamon</h4>
-            <p style="font-size: 0.72rem; line-height: 1.4; color: var(--text-white); font-weight: 500; text-align: left; margin: 0.25rem 0;">${text}</p>
+            <p style="font-size: 0.72rem; line-height: 1.4; color: #37474f; font-weight: 600; text-align: left; margin: 0.25rem 0;">${text}</p>
             <button class="btn btn-secondary btn-xs" id="btn-close-help" style="width: 100%; padding: 0.4rem; font-weight: 700; margin-top: 0.25rem;">Cerrar</button>
           </div>
         `;
