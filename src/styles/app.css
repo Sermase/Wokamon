@@ -76,7 +76,9 @@ h3 { font-size: 17px; line-height: 1.2; font-weight: 700; }
   max-width: 480px;
   margin: 0 auto;
   min-height: 100dvh;
-  padding: calc(var(--safe-top) + 10px) var(--gutter) calc(var(--tabbar) + var(--safe-bottom) + 24px);
+  padding-block: calc(var(--safe-top) + 10px) calc(var(--tabbar) + var(--safe-bottom) + 24px);
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
   position: relative;
 }
 .screen { display: flex; flex-direction: column; gap: 16px; }
