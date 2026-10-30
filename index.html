@@ -1,75 +1,15 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>W</text></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wokamon Evolucionado - Prototipo de juego físico-virtual</title>
-    <meta name="description" content="Tus pasos de la vida real se convierten en cuidado para criar, alimentar y eclosionar criaturas genéticas híbridas." />
-    <meta name="author" content="Antigravity Team" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#eef1ff" />
+    <meta name="description" content="Camina para criar criaturas únicas: tus pasos de verdad alimentan, hacen crecer y cruzan a tus Wokamon." />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>Wokamon</title>
   </head>
   <body>
-    <div class="nebula-bg glow-cyan"></div>
-    <div class="nebula-bg glow-pink"></div>
-    <div class="nebula-bg glow-orange"></div>
-
-    <div id="app">
-      <header class="app-header glass-panel">
-        <div class="header-logo-section">
-          <span class="spinning-w">W</span><span class="brand-text">okamon</span>
-        </div>
-        <div id="header-user-container"></div>
-      </header>
-
-      <main class="app-main-content">
-        <section class="panel-section active-panel" id="panel-activity">
-          <div class="dashboard-stack">
-            <div id="step-simulator-container"></div>
-            <div id="stable-manager-container"></div>
-          </div>
-        </section>
-
-        <section class="panel-section" id="panel-mating">
-          <div id="mating-ritual-container"></div>
-        </section>
-
-        <section class="panel-section" id="panel-incubator">
-          <div id="incubator-container"></div>
-        </section>
-
-        <section class="panel-section" id="panel-wokadex">
-          <div id="wokadex-container"></div>
-        </section>
-
-        <section class="panel-section" id="panel-stats">
-          <div id="stats-dashboard-container"></div>
-        </section>
-      </main>
-
-      <div id="toast-notification-root"></div>
-
-      <footer class="app-footer game-footer" id="main-navigation">
-        <button class="nav-tab" id="nav-tab-mating" data-target="panel-mating" aria-label="Ritual" title="Ritual">
-          <span class="nav-icon">&#10022;</span>
-        </button>
-        <button class="nav-tab" id="nav-tab-incubator" data-target="panel-incubator" aria-label="Incubadora" title="Incubadora">
-          <span class="nav-icon">&#9678;</span>
-        </button>
-        <button class="nav-tab active-tab nav-tab-home" id="nav-tab-activity" data-target="panel-activity" aria-label="Criadero" title="Criadero">
-          <span class="nav-icon">&#8962;</span>
-        </button>
-        <button class="nav-tab" id="nav-tab-wokadex" data-target="panel-wokadex" aria-label="Wokadex" title="Wokadex">
-          <span class="nav-icon">&#9670;</span>
-        </button>
-        <button class="nav-tab" id="nav-tab-stats" data-target="panel-stats" aria-label="Estadisticas" title="Estadisticas">
-          <span class="nav-icon">&#9636;</span>
-        </button>
-      </footer>
-    </div>
-
-    <script type="module" src="/src/main.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
