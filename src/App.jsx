@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { boot, dispatch, onGameEvent, useStore } from './data/store.js';
 import { createStepService } from './steps/stepService.js';
-import { BreedIcon, CrystalIcon, HomeIcon, JournalIcon, StableIcon, EggIcon } from './ui/Icons.jsx';
+import { BreedIcon, CrystalIcon, HomeIcon, JournalIcon, StableIcon, EggIcon, HangerIcon } from './ui/Icons.jsx';
+import { setSoundEnabled, sfx } from './ui/sfx.js';
 import { Toasts, toast } from './ui/kit.jsx';
 import { Creature } from './art/Creature.jsx';
 import Welcome from './screens/Welcome.jsx';
@@ -45,6 +46,7 @@ export default function App() {
   }, []);
 
   useEffect(() => { boot(); }, []);
+  useEffect(() => { setSoundEnabled(prefs.sound !== false); }, [prefs.sound]);
 
   // Pasos: el servicio se crea una vez y envía lotes a la partida.
   useEffect(() => {
@@ -82,12 +84,16 @@ export default function App() {
   // Traducir eventos del juego a avisos, reacciones y momentos.
   useEffect(() => onGameEvent((e) => {
     switch (e.type) {
-      case 'error': toast(e.text, { kind: 'error' }); break;
-      case 'crystals': toast(`+${e.amount} ${e.amount === 1 ? 'cristal' : 'cristales'}`, { icon: <CrystalIcon />, ms: 1800 }); break;
-      case 'fed': react(e.id, 'eat'); break;
-      case 'played': react(e.id, 'play'); break;
-      case 'cured': react(e.id, 'pet'); toast(`${e.name} ya se encuentra mejor.`); break;
+      case 'error': sfx.error(); toast(e.text, { kind: 'error' }); break;
+      case 'crystals': sfx.coin(); toast(`+${e.amount} ${e.amount === 1 ? 'cristal' : 'cristales'}`, { icon: <CrystalIcon />, ms: 1800 }); break;
+      case 'fed': sfx.eat(); react(e.id, 'eat'); break;
+      case 'played': sfx.play(); react(e.id, 'play'); break;
+      case 'cured': sfx.pet(); react(e.id, 'pet'); toast(`${e.name} ya se encuentra mejor.`); break;
+      case 'bought': sfx.coin(); toast(`${e.name}: ¡ya es tuyo!`, { icon: <HangerIcon /> }); break;
+      case 'wore': react(e.id, 'pet'); sfx.tap(); break;
+      case 'died': sfx.sad(); break;
       case 'levelUp':
+        sfx.level();
         react(e.id, 'level');
         toast(`${e.name} sube a nivel ${e.level} (+${e.crystals} cristales)`, { icon: <CrystalIcon /> });
         break;
@@ -97,7 +103,7 @@ export default function App() {
           ? { kind: 'friend', id: e.id, title: '¡Ha llegado Woki Bebé!', text: 'Tus primeros pasos lo han atraído. Cada paso que das es energía para darle de comer.' }
           : { kind: 'friend', id: e.id, title: `${e.name} te ha seguido`, text: 'Un Wokamon perdido te ha visto caminar y se ha quedado contigo.' });
         break;
-      case 'eggLaid': setMoment({ kind: 'egg', eggId: e.eggId, title: '¡Un huevo!', text: `${e.parentA} y ${e.parentB} han terminado su paseo. Camina para incubarlo.` }); break;
+      case 'eggLaid': sfx.egg(); setMoment({ kind: 'egg', eggId: e.eggId, title: '¡Un huevo!', text: `${e.parentA} y ${e.parentB} han terminado su paseo. Camina para incubarlo.` }); break;
       case 'eggReady': toast('Un huevo está a punto de abrirse.', { icon: <EggIcon /> }); break;
       case 'code': setCode(e); break;
       case 'partnerReady': toast(`${e.name} está listo para cruzar.`); setTab('breed'); setBreedView('courtship'); break;
@@ -144,7 +150,7 @@ export default function App() {
             prefs={prefs}
             steps={steps}
             reactions={reactions}
-            onPet={(id) => { dispatch('pet', { id }); react(id, 'pet'); }}
+            onPet={(id) => { dispatch('pet', { id }); sfx.pet(); react(id, 'pet'); }}
             onOpenSettings={() => setSettingsOpen(true)}
             onOpenCreature={openCreature}
             onStartSteps={() => stepService.current?.start(true)}
@@ -176,7 +182,7 @@ export default function App() {
         id={creatureId}
         reaction={creatureId ? reactions[creatureId] : null}
         onClose={() => setCreatureId(null)}
-        onPet={(id) => { dispatch('pet', { id }); react(id, 'pet'); }}
+        onPet={(id) => { dispatch('pet', { id }); sfx.pet(); react(id, 'pet'); }}
         onOpenCreature={openCreature}
       />
       <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} session={session} prefs={prefs} steps={steps} stepService={stepService} onRedeem={() => { setSettingsOpen(false); setRedeemOpen(true); }} />

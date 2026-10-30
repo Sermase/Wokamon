@@ -31,7 +31,11 @@ export const ALLELES = {
     H: { name: 'horns', dominance: 4 },
     a: { name: 'antennae', dominance: 3 },
     e: { name: 'ears', dominance: 2 },
+    b: { name: 'bunny', dominance: 2 },
+    o: { name: 'bear', dominance: 2 },
     s: { name: 'sprouts', dominance: 1 },
+    u: { name: 'unicorn', dominance: 1 },
+    c: { name: 'crest', dominance: 1 },
     n: { name: 'none', dominance: 1 },
   },
   tailType: {
@@ -39,6 +43,22 @@ export const ALLELES = {
     p: { name: 'pom', dominance: 3 },
     s: { name: 'spike', dominance: 2 },
     f: { name: 'fluff', dominance: 1 },
+    d: { name: 'devil', dominance: 1 },
+    r: { name: 'curly', dominance: 1 },
+  },
+  wings: {
+    N: { name: 'none', dominance: 3 },
+    a: { name: 'angel', dominance: 1 },
+    d: { name: 'dragon', dominance: 1 },
+    f: { name: 'fairy', dominance: 1 },
+  },
+  markings: {
+    n: { name: 'none', dominance: 1 },
+    s: { name: 'spots', dominance: 2 },
+    t: { name: 'stripes', dominance: 2 },
+    m: { name: 'mask', dominance: 2 },
+    k: { name: 'socks', dominance: 2 },
+    p: { name: 'patch', dominance: 2 },
   },
   bellyShape: {
     O: { name: 'oval', dominance: 3 },
@@ -97,8 +117,8 @@ export const ALLELES = {
 export const LOCI = Object.keys(ALLELES);
 
 export const LOCUS_GROUPS = [
-  { id: 'body', label: 'Cuerpo', loci: ['bodyBase', 'bodyProportion', 'limbType', 'headMerge', 'topAppendage', 'tailType', 'bellyShape'] },
-  { id: 'face', label: 'Cara y piel', loci: ['eyeShape', 'pupilStyle', 'mouthStyle', 'surfaceType'] },
+  { id: 'body', label: 'Cuerpo', loci: ['bodyBase', 'bodyProportion', 'limbType', 'headMerge', 'topAppendage', 'tailType', 'wings', 'bellyShape'] },
+  { id: 'face', label: 'Cara y piel', loci: ['eyeShape', 'pupilStyle', 'mouthStyle', 'surfaceType', 'markings'] },
   { id: 'bio', label: 'Biología', loci: ['metabolism', 'longevity', 'diseaseResilience', 'vitalityStorage'] },
 ];
 
@@ -109,6 +129,8 @@ export const LOCUS_LABELS = {
   headMerge: 'Cabeza',
   topAppendage: 'Sobre la cabeza',
   tailType: 'Cola',
+  wings: 'Alas',
+  markings: 'Marcas',
   bellyShape: 'Barriga',
   eyeShape: 'Ojos',
   pupilStyle: 'Pupilas',
@@ -125,8 +147,13 @@ export const TRAIT_LABELS = {
   bodyProportion: { balanced: 'Equilibrada', chubby: 'Rechoncha', tall: 'Espigada', tiny: 'Diminuta' },
   limbType: { stubby: 'Cortitas', soft: 'Almohadilla', long: 'Largas', springy: 'Muelle' },
   headMerge: { integrated: 'Integrada', 'semi-separated': 'Separada' },
-  topAppendage: { horns: 'Cuernos', antennae: 'Antenas', ears: 'Orejas', sprouts: 'Brote', none: 'Nada' },
-  tailType: { none: 'Sin cola', pom: 'Pompón', spike: 'Pinchos', fluff: 'Plumero' },
+  topAppendage: {
+    horns: 'Cuernos', antennae: 'Antenas', ears: 'Orejas de gato', bunny: 'Orejas de conejo', bear: 'Orejas de oso',
+    sprouts: 'Brote', unicorn: 'Cuerno mágico', crest: 'Cresta', none: 'Nada',
+  },
+  tailType: { none: 'Sin cola', pom: 'Pompón', spike: 'Pinchos', fluff: 'Plumero', devil: 'Diablillo', curly: 'Rizo' },
+  wings: { none: 'Sin alas', angel: 'De ángel', dragon: 'De dragón', fairy: 'De hada' },
+  markings: { none: 'Ninguna', spots: 'Manchas', stripes: 'Rayas', mask: 'Antifaz', socks: 'Calcetines', patch: 'Parche' },
   bellyShape: { oval: 'Óvalo', heart: 'Corazón', teardrop: 'Gota', cloud: 'Nube', none: 'Lisa' },
   eyeShape: { round: 'Redondos', sleepy: 'Dormilones', sparkle: 'Brillantes', wide: 'Grandotes', droopy: 'Caídos' },
   pupilStyle: { dot: 'Punto', glossy: 'Brillo', star: 'Estrella', slit: 'Felina' },
@@ -147,7 +174,7 @@ export const BIO_HELP = {
 
 const DEFAULT_ALLELE = {
   bodyBase: 'R', bodyProportion: 'B', limbType: 'S', headMerge: 'I', topAppendage: 'n',
-  tailType: 'N', bellyShape: 'O', eyeShape: 'R', pupilStyle: 'D', mouthStyle: 'S',
+  tailType: 'N', wings: 'N', markings: 'n', bellyShape: 'O', eyeShape: 'R', pupilStyle: 'D', mouthStyle: 'S',
   surfaceType: 'S', metabolism: 'n', longevity: 'n', diseaseResilience: 'n', vitalityStorage: 'n',
 };
 
@@ -279,11 +306,16 @@ export function punnett(genoA, genoB, locus) {
     .sort((x, y) => y.chance - x.chance);
 }
 
+// Rasgos raros: en la naturaleza casi todos los alelos de alas son "sin alas".
+const WILD_BIAS = { wings: { allele: 'N', chance: 0.72 } };
+
 export function randomGenotype(rand = Math.random) {
   const geno = {};
   for (const locus of LOCI) {
     const alleles = Object.keys(ALLELES[locus]);
-    geno[locus] = [pick(alleles, rand), pick(alleles, rand)];
+    const bias = WILD_BIAS[locus];
+    const draw = () => (bias && rand() < bias.chance ? bias.allele : pick(alleles, rand));
+    geno[locus] = [draw(), draw()];
   }
   const r = (min, max) => Math.round(min + rand() * (max - min));
   const hue = r(0, 359);

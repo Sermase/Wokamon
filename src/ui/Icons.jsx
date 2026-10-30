@@ -154,3 +154,20 @@ export function FlaskIcon(props) {
     </svg>
   );
 }
+
+export function FlameIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M12 2.5c1 3.5 5.5 5.5 5.5 11a5.5 5.5 0 0 1-11 0c0-2.6 1.3-4.3 2.6-5.6.3 1.6 1.1 2.6 2.1 3.1C10.6 8 11 5 12 2.5z" fill="hsl(22 95% 58%)" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+      <path d="M12 12.5c.8 1.6 2.6 2.3 2.6 4.4a2.6 2.6 0 0 1-5.2 0c0-1.5.9-2.5 1.8-3.2.2.6.5 1 .8 1.2z" fill="var(--sun)" stroke={INK} strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function HangerIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path d="M12 8.5V7.4a2.2 2.2 0 1 0-2.2-2.2M12 8.5 3 15.2a1.4 1.4 0 0 0 .8 2.5h16.4a1.4 1.4 0 0 0 .8-2.5z" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

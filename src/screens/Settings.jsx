@@ -83,6 +83,13 @@ export default function Settings({ open, onClose, session, prefs, steps, stepSer
 
       <section className="card stack">
         <label className="row" style={{ justifyContent: 'space-between', fontWeight: 700 }}>
+          Sonidos y vibración
+          <input type="checkbox" checked={prefs.sound !== false} onChange={(e) => setPref('sound', e.target.checked)} style={{ width: 24, height: 24, accentColor: 'var(--ink)' }} />
+        </label>
+      </section>
+
+      <section className="card stack">
+        <label className="row" style={{ justifyContent: 'space-between', fontWeight: 700 }}>
           Herramientas de prueba
           <input type="checkbox" checked={prefs.devTools} onChange={(e) => setPref('devTools', e.target.checked)} style={{ width: 24, height: 24, accentColor: 'var(--ink)' }} />
         </label>
@@ -99,7 +106,8 @@ export default function Settings({ open, onClose, session, prefs, steps, stepSer
           <li>Si se queda sin ración varios días enferma, pierde salud y puede acabar convertido en fantasma.</li>
           <li>Comer le hace crecer. En el nivel {RULES.adultLevel} (o con {RULES.adultAge} días) es adulto y puede criar.</li>
           <li>Para criar, dad un paseo de cortejo de {fmt(RULES.courtshipSteps)} pasos con una pareja salvaje o la de un amigo. El huevo se incuba caminando.</li>
-          <li>Las crías heredan un alelo de cada progenitor. Cuanto más mestizas, más rápido crecen.</li>
+          <li>Las crías heredan un alelo de cada progenitor. Cuanto más mestizas, más rápido crecen. Las alas son un rasgo raro: solo salen si los dos alelos las llevan.</li>
+          <li>Si todos tus Wokamon comen su ración, sumas un día de racha. Cada 7 días seguidos ganas 10 cristales, que puedes gastar en el armario de cada Wokamon.</li>
         </ol>
       </section>
       <p className="muted small" style={{ textAlign: 'center' }}>Wokamon 2.0</p>

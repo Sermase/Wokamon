@@ -27,6 +27,15 @@ suite('genética', () => {
     expect(g.colorGenes.huePrimary[0]).toBe(360);
     expect(g.colorGenes.huePrimary[1]).toBe(50);
     expect(g.tailType).toEqual(['N', 'N']);
+    expect(g.wings).toEqual(['N', 'N']);
+    expect(g.markings).toEqual(['n', 'n']);
+  });
+
+  it('las alas son raras en parejas salvajes', () => {
+    let winged = 0;
+    for (let i = 0; i < 2000; i += 1) if (getPhenotype(sanitizeGenotype(randomGenotype())).wings !== 'none') winged += 1;
+    expect(winged / 2000).toBeGreaterThan(0.03);
+    expect(winged / 2000).toBeLessThan(0.15);
   });
 
   it('cuadro de Punnett: Rb × Rb da 75 % redonda', () => {
@@ -236,5 +245,40 @@ suite('orden de incubación', () => {
     actions.startCourtship(s, { parentId: s.wokamons[0].id, partner: 'wild' }, at('2026-10-30T10:00:00'));
     actions.addSteps(s, { steps: RULES.courtshipSteps + 500 }, at('2026-10-30T10:00:00'));
     expect(s.eggs[0].points).toBe(500 / RULES.stepsPerEggPoint);
+  });
+});
+
+suite('accesorios y racha', () => {
+  it('comprar, ponerse y quitarse un accesorio', () => {
+    const s = newGameState(new Date('2026-10-30T10:00:00'));
+    actions.addSteps(s, { steps: 100 }, at('2026-10-30T10:00:00'));
+    const wok = s.wokamons[0];
+    expect(actions.buyAccessory(s, { item: 'crown' }, at('2026-10-30T10:00:00'))[0].type).toBe('error');
+    s.player.crystals = 100;
+    actions.buyAccessory(s, { item: 'crown' }, at('2026-10-30T10:00:00'));
+    expect(s.player.crystals).toBe(40);
+    expect(s.player.owned).toContain('crown');
+    actions.wear(s, { id: wok.id, item: 'crown' });
+    expect(wok.outfit.head).toBe('crown');
+    actions.wear(s, { id: wok.id, item: 'crown' });
+    expect(wok.outfit.head).toBeUndefined();
+  });
+
+  it('la racha sube si todos comen su ración y premia cada 7 días', () => {
+    const s = newGameState(new Date('2026-10-30T10:00:00'));
+    actions.addSteps(s, { steps: 100 }, at('2026-10-30T10:00:00'));
+    const before = s.player.crystals;
+    let key = '2026-10-30';
+    for (let i = 0; i < 7; i += 1) {
+      actions.addSteps(s, { steps: 6000 }, at(`${key}T12:00:00`));
+      key = addDays(key, 1);
+      actions.settle(s, {}, at(`${key}T06:00:00`));
+    }
+    expect(s.player.streak).toBe(7);
+    expect(s.player.crystals).toBeGreaterThanOrEqual(before + 10);
+    s.player.energy = 0;
+    key = addDays(key, 1);
+    actions.settle(s, {}, at(`${key}T06:00:00`));
+    expect(s.player.streak).toBe(0);
   });
 });

@@ -15,6 +15,7 @@
 }
 
 /* ---------- Idle ---------- */
+.wk-hop { transform-origin: 100px 183px; }
 .wk-breath { transform-origin: 100px 180px; animation: wk-breath 2.8s ease-in-out infinite; animation-delay: var(--wk-delay); }
 .wk--happy .wk-hop { animation: wk-hop 5.2s cubic-bezier(.3,.7,.4,1) infinite; animation-delay: var(--wk-delay); }
 .wk--happy .wk-shadow { transform-origin: 100px 183px; animation: wk-shadow 5.2s cubic-bezier(.3,.7,.4,1) infinite; animation-delay: var(--wk-delay); }
@@ -51,18 +52,41 @@
 .wk-bubbles circle:nth-child(2) { animation-delay: -1s; }
 .wk-bubbles circle:nth-child(3) { animation-delay: -2s; }
 
+/* ---------- Apéndices nuevos ---------- */
+.wk-wing--0 { animation: wk-flap-l 1.8s ease-in-out infinite; }
+.wk-wing--1 { animation: wk-flap-r 1.8s ease-in-out infinite; }
+.wk-wings--fairy .wk-wing--0, .wk-wings--fairy .wk-wing--1 { animation-duration: 0.5s; }
+.wk--sad .wk-wing, .wk--sick .wk-wing, .wk--sleeping .wk-wing, .wk--starving .wk-wing { animation: none; }
+.wk-crest { animation: wk-sprout 2.6s ease-in-out infinite; }
+.wk-twinkle { transform-box: fill-box; transform-origin: center; animation: wk-twinkle 2.2s ease-in-out infinite; }
+.wk-scarf-tail { animation: wk-sprout 2.4s ease-in-out infinite; }
+
 /* ---------- Reacciones ---------- */
+.wk--react-bounce .wk-hop { animation: wk-bounce2 1s cubic-bezier(.3,.7,.4,1) 1; }
+.wk--react-bounce .wk-shadow { transform-origin: 100px 183px; animation: wk-bounce2-shadow 1s cubic-bezier(.3,.7,.4,1) 1; }
+.wk--react-spin .wk-hop { animation: wk-spin 0.95s ease-in-out 1; }
+.wk--react-wiggle .wk-hop { animation: wk-wiggle 1.2s ease-in-out 1; }
+.wk--react-yawn .wk-breath { animation: wk-yawn 1.9s ease-in-out 1; }
+.wk--react-sigh .wk-breath { animation: wk-sigh 1.9s ease-in-out 1; }
+.wk--react-play .wk-arm, .wk--react-level .wk-arm { animation: none; }
+.wk-arms--up .wk-arm--0 { transform: rotate(60deg); transition: transform 160ms ease-out; }
+.wk-arms--up .wk-arm--1 { transform: rotate(-60deg); transition: transform 160ms ease-out; }
+.wk-yawn { animation: wk-yawn-mouth 1.9s ease-in-out 1; }
+.wk-food { animation: wk-food 0.85s cubic-bezier(.4,.1,.6,1) forwards; }
+.wk-puff { transform-box: fill-box; transform-origin: left center; opacity: 0; animation: wk-puff 1.6s ease-out 0.3s forwards; }
 .wk--react-pet .wk-breath { animation: wk-squish 0.5s ease-out 2; }
 .wk--react-eat .wk-breath { animation: wk-squish 0.36s ease-out 3; }
 .wk--react-play .wk-hop, .wk--react-level .wk-hop { animation: wk-jump 0.9s cubic-bezier(.3,.7,.4,1) 1; }
 .wk--react-play .wk-shadow, .wk--react-level .wk-shadow { animation: wk-jump-shadow 0.9s cubic-bezier(.3,.7,.4,1) 1; }
-.wk-chomp { animation: wk-chomp 0.36s ease-in-out 3; }
+.wk-chomp { animation: wk-chomp 0.3s ease-in-out 0.62s 3; }
 .wk-heart { opacity: 0; animation: wk-heart 1.1s ease-out forwards; }
 .wk-crumb { opacity: 0; animation: wk-crumb 0.9s ease-in forwards; }
 .wk-spark { opacity: 0; animation: wk-spark 1.2s ease-out forwards; }
-.wk-heart, .wk-spark, .wk-crumb { transform-box: fill-box; transform-origin: center; }
+.wk .wk-heart, .wk .wk-spark, .wk .wk-crumb, .wk .wk-glow, .wk .wk-bubbles circle, .wk .wk-twinkle, .wk .wk-food { transform-box: fill-box; transform-origin: center; }
+.wk .wk-puff { transform-box: fill-box; transform-origin: left center; }
 
 /* ---------- Niveles de movimiento ---------- */
+.wk--motion-calm .wk-wing,
 .wk--motion-calm .wk-hop,
 .wk--motion-calm .wk-shadow,
 .wk--motion-calm .wk-look,
@@ -76,7 +100,72 @@
 .wk--motion-none .wk-glow { opacity: 0.3; }
 
 @media (prefers-reduced-motion: reduce) {
-  .wk-hop, .wk-shadow, .wk-look, .wk-wave, .wk-tail, .wk-ear--0, .wk-ear--1, .wk--ghost .wk-stage { animation: none !important; }
+  .wk-hop, .wk-shadow, .wk-look, .wk-wave, .wk-tail, .wk-ear--0, .wk-ear--1, .wk-wing, .wk-crest, .wk--ghost .wk-stage { animation: none !important; }
+}
+
+@keyframes wk-flap-l {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(14deg); }
+}
+@keyframes wk-flap-r {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-14deg); }
+}
+@keyframes wk-twinkle {
+  0%, 100% { transform: scale(0.6) rotate(0deg); opacity: 0.4; }
+  50% { transform: scale(1.15) rotate(45deg); opacity: 1; }
+}
+@keyframes wk-bounce2 {
+  0%, 100% { transform: translateY(0) scale(1); }
+  12% { transform: translateY(0) scale(1.08, 0.9); }
+  28% { transform: translateY(-22px) scale(0.95, 1.06); }
+  44% { transform: translateY(0) scale(1.08, 0.9); }
+  62% { transform: translateY(-14px) scale(0.97, 1.04); }
+  80% { transform: translateY(0) scale(1.05, 0.94); }
+}
+@keyframes wk-bounce2-shadow {
+  0%, 44%, 80%, 100% { transform: scale(1); }
+  28% { transform: scale(0.65); }
+  62% { transform: scale(0.78); }
+}
+@keyframes wk-spin {
+  0% { transform: scaleX(1) translateY(0); }
+  25% { transform: scaleX(0.05) translateY(-14px); }
+  50% { transform: scaleX(-1) translateY(-18px); }
+  75% { transform: scaleX(0.05) translateY(-10px); }
+  100% { transform: scaleX(1) translateY(0); }
+}
+@keyframes wk-wiggle {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(-9deg) translateY(-3px); }
+  30% { transform: rotate(8deg); }
+  45% { transform: rotate(-7deg) translateY(-3px); }
+  60% { transform: rotate(6deg); }
+  75% { transform: rotate(-3deg); }
+}
+@keyframes wk-yawn {
+  0%, 100% { transform: scale(1, 1); }
+  35%, 65% { transform: scale(0.96, 1.07); }
+}
+@keyframes wk-yawn-mouth {
+  0%, 100% { transform: scale(0.3); }
+  30%, 70% { transform: scale(1); }
+}
+@keyframes wk-sigh {
+  0%, 100% { transform: scale(1, 1); }
+  30% { transform: scale(1.02, 1.04); }
+  60% { transform: scale(1.04, 0.95); }
+}
+@keyframes wk-food {
+  0% { transform: translate(34px, 46px) scale(1) rotate(-20deg); opacity: 0; }
+  15% { opacity: 1; }
+  70% { transform: translate(6px, -6px) scale(0.9) rotate(10deg); opacity: 1; }
+  100% { transform: translate(0, 0) scale(0.2); opacity: 0; }
+}
+@keyframes wk-puff {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  30% { opacity: 0.95; }
+  100% { transform: translate(14px, -8px) scale(1.2); opacity: 0; }
 }
 
 @keyframes wk-breath {

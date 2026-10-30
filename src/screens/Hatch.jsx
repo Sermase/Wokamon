@@ -6,6 +6,7 @@ import { getColors } from '../game/genetics.js';
 import { Creature } from '../art/Creature.jsx';
 import { Egg } from '../art/Egg.jsx';
 import { Backdrop } from '../art/Habitat.jsx';
+import { buzz, sfx } from '../ui/sfx.js';
 
 const TAPS = 3;
 
@@ -27,7 +28,9 @@ export default function Hatch({ game, eggId, onDone }) {
   const tap = () => {
     if (taps >= TAPS) return;
     const next = taps + 1;
-    if (navigator.vibrate) navigator.vibrate(next === TAPS ? [60, 40, 120] : 40);
+    sfx.crack();
+    buzz(next === TAPS ? [60, 40, 120] : 40);
+    if (next === TAPS) setTimeout(() => sfx.hatch(), 450);
     setTaps(next);
     setShakeKey((k) => k + 1);
     if (next === TAPS) setTimeout(() => setBorn(true), 450);

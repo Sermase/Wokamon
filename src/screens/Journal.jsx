@@ -3,7 +3,7 @@ import { allTraits, alleleForName, babyGenotype, LOCUS_GROUPS, LOCUS_LABELS, tra
 import { totalNeed } from '../game/engine.js';
 import { addDays, careDayKey, parseKey } from '../game/time.js';
 import { Creature } from '../art/Creature.jsx';
-import { CrystalIcon, EggIcon, FlaskIcon, FootIcon, GhostIcon, GiftIcon, HeartIcon, LeafIcon } from '../ui/Icons.jsx';
+import { CrystalIcon, EggIcon, FlaskIcon, FootIcon, GhostIcon, GiftIcon, HangerIcon, HeartIcon, LeafIcon } from '../ui/Icons.jsx';
 import { Segmented, fmt } from '../ui/kit.jsx';
 import { Wallet } from './Home.jsx';
 
@@ -76,6 +76,9 @@ function Steps({ game }) {
         <div><span className="muted small">Total</span><strong className="num">{fmt(game.player.totalSteps)}</strong></div>
         <div><span className="muted small">Mejor día</span><strong className="num">{fmt(best)}</strong></div>
         <div><span className="muted small">Media semanal</span><strong className="num">{fmt(avg)}</strong></div>
+        <div><span className="muted small">Racha</span><strong className="num">{game.player.streak} {game.player.streak === 1 ? 'día' : 'días'}</strong></div>
+        <div><span className="muted small">Mejor racha</span><strong className="num">{game.player.bestStreak || 0} {game.player.bestStreak === 1 ? 'día' : 'días'}</strong></div>
+        <div><span className="muted small">Wokamon criados</span><strong className="num">{game.wokamons.length + game.memorial.length}</strong></div>
       </section>
       <section className="card">
         <h3 style={{ marginBottom: 8 }}>Últimos 30 días</h3>
@@ -152,6 +155,7 @@ function Dex({ game }) {
 const LOG_ICON = {
   walk: [FootIcon, '#d4f6e4'], care: [HeartIcon, '#ffd9e1'], breed: [HeartIcon, '#ffe2ea'], hatch: [EggIcon, '#fff1c4'],
   gift: [GiftIcon, '#dbe8ff'], death: [GhostIcon, '#ececf4'], lab: [FlaskIcon, '#e8e0ff'], crystal: [CrystalIcon, '#e8e0ff'],
+  shop: [HangerIcon, '#fff1c4'],
 };
 
 function dayLabel(date) {

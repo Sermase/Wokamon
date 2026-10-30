@@ -6,6 +6,9 @@ import { Creature, CreatureOf } from '../art/Creature.jsx';
 import { Backdrop } from '../art/Habitat.jsx';
 import { PencilIcon, StarIcon } from '../ui/Icons.jsx';
 import { Cost, Meter, Sheet, fmt } from '../ui/kit.jsx';
+import { ACCESSORIES } from '../game/accessories.js';
+import { AccessoryIcon } from '../art/Accessory.jsx';
+import { creaturePalette } from '../art/palette.js';
 import { feedAmount, moodLine } from './Home.jsx';
 
 export default function CreatureSheet({ game, id, reaction, onClose, onPet }) {
@@ -39,7 +42,7 @@ export default function CreatureSheet({ game, id, reaction, onClose, onPet }) {
     <Sheet open onClose={onClose} label={`Ficha de ${wok.name}`}>
       <div className="sheet-hero">
         <Backdrop hue={wok.colors.primary.h} dim={dead} />
-        <CreatureOf wok={wok} reaction={reaction} onClick={() => !dead && onPet(wok.id)} />
+        <CreatureOf wok={wok} reaction={reaction} idle onClick={() => !dead && onPet(wok.id)} />
       </div>
 
       {editing ? (
@@ -85,6 +88,8 @@ export default function CreatureSheet({ game, id, reaction, onClose, onPet }) {
           </div>
         </>
       )}
+
+      {!dead && <Wardrobe game={game} wok={wok} />}
 
       <section className="card stack">
         <h3>Biología</h3>
@@ -184,3 +189,46 @@ function Parent({ p }) {
   );
 }
 
+
+function Wardrobe({ game, wok }) {
+  const [ask, setAsk] = useState(null);
+  const pal = useMemo(() => creaturePalette(wok.colors), [wok.colors]);
+  const owned = game.player.owned || [];
+  const worn = Object.values(wok.outfit || {});
+  const tap = (acc) => {
+    if (owned.includes(acc.id)) {
+      setAsk(null);
+      dispatch('wear', { id: wok.id, item: acc.id });
+    } else if (ask === acc.id) {
+      setAsk(null);
+      const events = dispatch('buyAccessory', { item: acc.id });
+      if (events.some((e) => e.type === 'bought')) dispatch('wear', { id: wok.id, item: acc.id });
+    } else {
+      setAsk(acc.id);
+    }
+  };
+  return (
+    <section className="card stack">
+      <div className="card-title" style={{ marginBottom: 0 }}>
+        <h3>Armario</h3>
+        <span className="muted small">Toca para ponérselo</span>
+      </div>
+      <div className="wardrobe">
+        {ACCESSORIES.map((acc) => {
+          const isOwned = owned.includes(acc.id);
+          const on = worn.includes(acc.id);
+          const asking = ask === acc.id;
+          return (
+            <button key={acc.id} className={`wardrobe-item ${on ? 'on' : ''} ${isOwned ? '' : 'locked'}`} onClick={() => tap(acc)} aria-pressed={on}>
+              <span className="wardrobe-art"><AccessoryIcon id={acc.id} pal={pal} ink="var(--ink)" /></span>
+              <span className="wardrobe-name">{asking ? '¿Comprar?' : acc.name}</span>
+              {!isOwned && <Cost crystals={acc.price} />}
+              {isOwned && <span className="sub">{on ? 'Puesto' : 'Tuyo'}</span>}
+            </button>
+          );
+        })}
+      </div>
+      {ask && <p className="muted small">Toca otra vez para comprarlo con cristales.</p>}
+    </section>
+  );
+}

@@ -152,6 +152,7 @@ export function createWokamon({ name, genotype, generation = 1, parents = null, 
     parents,
     favorite: false,
     dead: false,
+    outfit: {},
     bornAt: nowIso || new Date().toISOString(),
   };
 }

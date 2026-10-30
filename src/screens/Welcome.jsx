@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { session$, IS_DEMO } from '../data/store.js';
 import { Creature } from '../art/Creature.jsx';
 import { HabitatScene } from '../art/Habitat.jsx';
-import { babyGenotype, randomGenotype, sanitizeGenotype } from '../game/genetics.js';
+import { babyGenotype, sanitizeGenotype } from '../game/genetics.js';
 import { partOfDay } from '../game/time.js';
 
 export default function Welcome({ error }) {
@@ -11,11 +11,19 @@ export default function Welcome({ error }) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(error ? 'No se pudo conectar con tu partida. Comprueba la conexión y vuelve a intentarlo.' : '');
-  const crowd = useMemo(() => [
-    sanitizeGenotype(randomGenotype()),
-    babyGenotype(),
-    sanitizeGenotype(randomGenotype()),
-  ], []);
+  const crowd = useMemo(() => {
+    const base = babyGenotype();
+    const col = (h, l, sat = 78, belly = 45) => ({ ...base.colorGenes, huePrimary: [h, h], lightPrimary: [l, l], satPrimary: [sat, sat], hueSecondary: [belly, belly], hueAccent: [(h + 160) % 360, (h + 160) % 360] });
+    const pick = (over) => sanitizeGenotype({ ...base, topAppendage: ['n', 'n'], tailType: ['N', 'N'], ...over });
+    const others = [
+      [pick({ topAppendage: ['b', 'b'], bodyBase: ['p', 'p'], tailType: ['p', 'p'], colorGenes: col(330, 76) }), { head: 'flower' }],
+      [pick({ topAppendage: ['H', 'H'], wings: ['d', 'd'], tailType: ['s', 's'], mouthStyle: ['f', 'f'], colorGenes: col(200, 62) }), null],
+      [pick({ topAppendage: ['u', 'u'], wings: ['a', 'a'], bodyBase: ['o', 'o'], colorGenes: col(268, 76, 70) }), null],
+      [pick({ topAppendage: ['o', 'o'], markings: ['m', 'm'], tailType: ['f', 'f'], colorGenes: col(28, 56, 60) }), { neck: 'scarf' }],
+    ];
+    const start = Math.floor(Math.random() * others.length);
+    return [others[start], [base, null], others[(start + 1 + Math.floor(Math.random() * 3)) % others.length]];
+  }, []);
 
   const run = async (method) => {
     setBusy(true);
@@ -43,7 +51,7 @@ export default function Welcome({ error }) {
           <p className="welcome-tag">Camina para criar criaturas únicas con tus pasos de verdad.</p>
         </div>
         <div className="welcome-crowd">
-          {crowd.map((g, i) => <Creature key={i} genotype={g} seed={`welcome${i}`} stage={i === 1 ? 'Niño' : 'Adulto'} />)}
+          {crowd.map(([g, outfit], i) => <Creature key={i} genotype={g} outfit={outfit} seed={`welcome${i}`} stage={i === 1 ? 'Niño' : 'Adulto'} age={i === 1 ? 0 : 9} idle />)}
         </div>
       </div>
 

@@ -6,7 +6,7 @@ import { babyGenotype } from '../game/genetics.js';
 import { isBedtime, partOfDay } from '../game/time.js';
 import { CreatureOf, Creature } from '../art/Creature.jsx';
 import { HabitatScene } from '../art/Habitat.jsx';
-import { Chevron, CrystalIcon, EnergyIcon, FootIcon, GearIcon } from '../ui/Icons.jsx';
+import { Chevron, CrystalIcon, EnergyIcon, FlameIcon, FootIcon, GearIcon } from '../ui/Icons.jsx';
 import { Cost, Meter, fmt } from '../ui/kit.jsx';
 
 const STATUS_CHIP = { happy: 'meadow', sad: 'sky', starving: 'sun', sick: 'berry', dead: 'grey' };
@@ -89,7 +89,7 @@ export default function Home({ game, session, prefs, steps, reactions, onPet, on
               onClick={() => { if (sleeping) wake(); else onPet(wok.id); }}
               aria-label={sleeping ? `Despertar a ${wok.name}` : `Acariciar a ${wok.name}`}
             >
-              <CreatureOf wok={wok} sleeping={sleeping} reaction={reactions[wok.id]} />
+              <CreatureOf wok={wok} sleeping={sleeping} reaction={reactions[wok.id]} idle />
             </button>
             {roster.length > 1 && (
               <>
@@ -170,7 +170,9 @@ function WalkCard({ game, today, need, steps, prefs, onStartSteps }) {
     <section className="card" aria-label="Pasos de hoy">
       <div className="card-title">
         <h3>Hoy has caminado</h3>
-        <span className="muted small num">{fmt(game.player.totalSteps)} en total</span>
+        {game.player.streak > 0
+          ? <span className="chip sun num" title="Días seguidos en los que todos comieron su ración"><FlameIcon width="16" />Racha de {game.player.streak} {game.player.streak === 1 ? 'día' : 'días'}</span>
+          : <span className="muted small num">{fmt(game.player.totalSteps)} en total</span>}
       </div>
       <div className="walk-big num">{fmt(today)} <span style={{ fontSize: 20 }}>pasos</span></div>
       <div className="trail" aria-hidden="true">

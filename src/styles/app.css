@@ -285,6 +285,22 @@ h3 { font-size: 17px; line-height: 1.2; font-weight: 700; }
 .sheet-hero { height: 220px; border: var(--line); border-radius: var(--r-lg); position: relative; overflow: hidden; }
 .sheet-hero > .wk, .sheet-hero > .egg { position: absolute; left: 50%; bottom: 4px; width: 210px; height: 210px; transform: translateX(-50%); }
 
+/* ---------- Armario ---------- */
+.wardrobe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.wardrobe-item {
+  display: flex; flex-direction: column; align-items: center; gap: 0; padding: 6px 2px 8px;
+  border: 2px solid var(--ink); border-radius: 16px; background: var(--card); box-shadow: 0 2px 0 var(--ink);
+  font-weight: 700; font-size: 12.5px; line-height: 1.1; text-align: center; min-height: 104px;
+}
+.wardrobe-item .sub { font-size: 12px; font-weight: 700; display: inline-flex; gap: 2px; align-items: center; }
+.wardrobe-item .sub svg { width: 14px; height: 14px; }
+.wardrobe-item.on { background: var(--sun); }
+.wardrobe-item.locked { background: #f4f4fb; }
+.wardrobe-item:active { transform: translateY(2px); box-shadow: none; }
+.wardrobe-art { width: 56px; height: 48px; display: grid; place-items: center; }
+.wardrobe-art svg { width: 100%; height: 100%; overflow: visible; }
+.wardrobe-name { min-height: 28px; display: flex; align-items: center; }
+
 /* ---------- Genes ---------- */
 .genes { display: flex; flex-direction: column; gap: 4px; }
 .gene { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 8px 0; border-bottom: 2px dashed #e1e3f3; }
@@ -332,7 +348,7 @@ label.field-label { font-weight: 700; font-size: 15px; display: flex; flex-direc
 
 /* ---------- Diario ---------- */
 .chart { width: 100%; height: auto; display: block; }
-.stat-trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat-trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 8px; }
 .stat-trio div { display: flex; flex-direction: column; }
 .stat-trio strong { font-size: 22px; line-height: 1.1; }
 .dex-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }

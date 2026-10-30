@@ -1,43 +1,83 @@
+// Galería de desarrollo: todas las variantes de criaturas, huevos y accesorios en una página.
 import { createRoot } from 'react-dom/client';
 import { Creature } from '../src/art/Creature.jsx';
+import { Egg } from '../src/art/Egg.jsx';
 import { babyGenotype, sanitizeGenotype, randomGenotype } from '../src/game/genetics.js';
 import { seeded } from '../src/art/palette.js';
 
+const params = new URLSearchParams(location.search);
+const motion = params.get('motion') || 'none';
+const section = params.get('s') || 'all';
 const base = babyGenotype();
-const rnd = seeded('gallery');
-const set = (over) => sanitizeGenotype({ ...base, ...over });
-const motion = new URLSearchParams(location.search).get('motion') || 'none';
-const items = [
-  ['bebé', base, {}],
-  ['round ears', set({ topAppendage: ['e','e'], colorGenes: { ...base.colorGenes, huePrimary: [200,210], hueSecondary:[340,340] } }), {}],
-  ['bean horns', set({ bodyBase: ['b','b'], topAppendage: ['H','H'], tailType:['s','s'], colorGenes: { ...base.colorGenes, huePrimary: [0,10], satPrimary:[85,85], lightPrimary:[58,58], hueAccent:[45,45] } }), {}],
-  ['pear antennae', set({ bodyBase: ['p','p'], topAppendage: ['a','a'], pupilStyle:['s','s'], eyeShape:['k','k'], colorGenes: { ...base.colorGenes, huePrimary: [265,270], hueAccent:[45,50] } }), {}],
-  ['cloud plush', set({ bodyBase: ['c','c'], surfaceType: ['p','p'], bellyShape:['h','h'], topAppendage:['e','e'], colorGenes: { ...base.colorGenes, huePrimary: [330,330], lightPrimary:[72,72] } }), {}],
-  ['blob jelly', set({ bodyBase: ['o','o'], surfaceType: ['j','j'], eyeShape:['w','w'], pupilStyle:['l','l'], tailType:['f','f'], colorGenes: { ...base.colorGenes, huePrimary: [175,180], hueAccent:[300,300] } }), {}],
-  ['squishy mochi', set({ bodyBase: ['s','s'], bodyProportion:['y','y'], limbType:['f','f'], tailType:['N','N'], colorGenes: { ...base.colorGenes, huePrimary: [355,355], lightPrimary:[78,78], satPrimary:[85,85] } }), {}],
-  ['panda semi', set({ headMerge: ['s','s'], bodyProportion:['c','c'], topAppendage:['e','e'], eyeShape:['s','s'], mouthStyle:['y','y'], tailType:['p','p'], colorGenes: { ...base.colorGenes, huePrimary: [210,210], satPrimary:[12,12], lightPrimary:[30,30], hueSecondary:[0,0], satSecondary:[0,0], lightSecondary:[96,96] } }), {}],
-  ['fuzzy long', set({ surfaceType: ['f','f'], limbType:['l','l'], bodyProportion:['t','t'], mouthStyle:['f','f'], colorGenes: { ...base.colorGenes, huePrimary: [28,30], lightPrimary:[55,55] } }), {}],
-  ['springy matte', set({ limbType: ['p','p'], surfaceType:['m','m'], mouthStyle:['o','o'], bellyShape:['c','c'], colorGenes: { ...base.colorGenes, huePrimary: [140,150], hueAccent:[20,20], patternContrast:[0.35,0.35] } }), {}],
-  ['droopy teardrop', set({ eyeShape: ['d','d'], bellyShape:['t','t'], pupilStyle:['g','g'], colorGenes: { ...base.colorGenes, huePrimary: [220,225], lightPrimary:[64,64], hueAccent:[190,190] } }), {}],
-  ['sad', set({ topAppendage:['e','e'] }), { mood: 'sad' }],
-  ['starving', base, { mood: 'starving' }],
-  ['sick', base, { mood: 'sick' }],
-  ['sleeping', set({ topAppendage:['e','e'] }), { sleeping: true }],
-  ['dead', base, { mood: 'dead', stage: 'Fantasma' }],
-  ['niño', base, { stage: 'Niño' }],
-  ['anciano', set({ topAppendage:['H','H'] }), { stage: 'Anciano' }],
-  ...Array.from({ length: 18 }, (_, i) => [`random ${i}`, sanitizeGenotype(randomGenotype(rnd)), {}]),
-];
+const rnd = seeded(params.get('seed') || 'gallery');
+const col = (h, l = 64, s = 78) => ({ ...base.colorGenes, huePrimary: [h, h], lightPrimary: [l, l], satPrimary: [s, s] });
+const set = (over) => sanitizeGenotype({ ...base, topAppendage: ['n', 'n'], tailType: ['N', 'N'], ...over });
+
+const groups = {
+  species: [
+    ['gato', set({ topAppendage: ['e', 'e'], tailType: ['f', 'f'], colorGenes: col(205) })],
+    ['conejo', set({ topAppendage: ['b', 'b'], tailType: ['p', 'p'], bodyBase: ['p', 'p'], colorGenes: col(330, 76) })],
+    ['oso', set({ topAppendage: ['o', 'o'], limbType: ['f', 'f'], bodyProportion: ['c', 'c'], colorGenes: col(28, 52, 55) })],
+    ['unicornio', set({ topAppendage: ['u', 'u'], wings: ['a', 'a'], bodyBase: ['o', 'o'], colorGenes: col(265, 78, 70) })],
+    ['dragón', set({ topAppendage: ['H', 'H'], wings: ['d', 'd'], tailType: ['s', 's'], mouthStyle: ['f', 'f'], colorGenes: col(150, 55) })],
+    ['hada', set({ topAppendage: ['a', 'a'], wings: ['f', 'f'], bodyBase: ['c', 'c'], eyeShape: ['k', 'k'], pupilStyle: ['s', 's'], colorGenes: col(190, 72) })],
+    ['diablillo', set({ topAppendage: ['H', 'H'], tailType: ['d', 'd'], bodyBase: ['b', 'b'], mouthStyle: ['f', 'f'], colorGenes: col(0, 60, 80) })],
+    ['cerdito', set({ topAppendage: ['e', 'e'], tailType: ['r', 'r'], bodyBase: ['s', 's'], bodyProportion: ['c', 'c'], colorGenes: col(350, 80, 85) })],
+    ['pájaro', set({ topAppendage: ['c', 'c'], wings: ['a', 'a'], bodyBase: ['p', 'p'], limbType: ['l', 'l'], colorGenes: col(48, 66, 90) })],
+    ['mapache', set({ topAppendage: ['o', 'o'], markings: ['m', 'm'], tailType: ['f', 'f'], colorGenes: col(220, 62, 18) })],
+    ['tigre', set({ topAppendage: ['e', 'e'], markings: ['t', 't'], tailType: ['f', 'f'], pupilStyle: ['l', 'l'], colorGenes: col(30, 60, 90) })],
+    ['dálmata', set({ topAppendage: ['b', 'b'], markings: ['s', 's'], headMerge: ['s', 's'], colorGenes: col(220, 92, 10) })],
+    ['calcetines', set({ topAppendage: ['e', 'e'], markings: ['k', 'k'], tailType: ['p', 'p'], surfaceType: ['p', 'p'], colorGenes: col(255, 40, 30) })],
+    ['parche', set({ topAppendage: ['o', 'o'], markings: ['p', 'p'], bodyBase: ['b', 'b'], colorGenes: col(36, 82, 60) })],
+    ['gelatina', set({ bodyBase: ['o', 'o'], surfaceType: ['j', 'j'], eyeShape: ['w', 'w'], pupilStyle: ['g', 'g'], colorGenes: col(170, 62) })],
+    ['peluche', set({ bodyBase: ['c', 'c'], surfaceType: ['p', 'p'], bellyShape: ['h', 'h'], topAppendage: ['o', 'o'], colorGenes: col(300, 75) })],
+    ['peludo', set({ surfaceType: ['f', 'f'], limbType: ['l', 'l'], bodyProportion: ['t', 't'], topAppendage: ['b', 'b'], colorGenes: col(20, 58) })],
+    ['muelles', set({ limbType: ['p', 'p'], surfaceType: ['m', 'm'], mouthStyle: ['o', 'o'], bellyShape: ['c', 'c'], colorGenes: col(100, 60) })],
+  ],
+  states: [
+    ['feliz', set({ topAppendage: ['b', 'b'] }), {}],
+    ['decaído', set({ topAppendage: ['b', 'b'] }), { mood: 'sad' }],
+    ['hambre', set({ topAppendage: ['e', 'e'] }), { mood: 'starving' }],
+    ['enfermo', set({ topAppendage: ['e', 'e'] }), { mood: 'sick' }],
+    ['dormido', set({ topAppendage: ['o', 'o'] }), { sleeping: true }],
+    ['fantasma', set({ topAppendage: ['e', 'e'] }), { mood: 'dead', stage: 'Fantasma' }],
+    ['recién nacido', base, { stage: 'Niño', age: 0 }],
+    ['niño', set({ topAppendage: ['H', 'H'], wings: ['a', 'a'] }), { stage: 'Niño', age: 4 }],
+    ['anciano', set({ topAppendage: ['H', 'H'] }), { stage: 'Anciano' }],
+    ['comiendo', set({ topAppendage: ['o', 'o'] }), { reaction: { type: 'eat', key: 1 } }],
+    ['bostezo', set({ topAppendage: ['e', 'e'] }), { reaction: { type: 'yawn', key: 1 } }],
+    ['nivel', set({ topAppendage: ['e', 'e'] }), { reaction: { type: 'level', key: 1 } }],
+  ],
+  outfits: [
+    ['gorro de lana', set({ topAppendage: ['e', 'e'] }), { outfit: { head: 'beanie', neck: 'scarf' } }],
+    ['fiesta', set({ topAppendage: ['o', 'o'] }), { outfit: { head: 'party' } }],
+    ['corona', set({ topAppendage: ['H', 'H'] }), { outfit: { head: 'crown' } }],
+    ['chistera', set({ topAppendage: ['b', 'b'] }), { outfit: { head: 'tophat', face: 'sunglasses' } }],
+    ['lazo', set({ topAppendage: ['b', 'b'], bodyBase: ['p', 'p'] }), { outfit: { head: 'bow' } }],
+    ['flor', set({ headMerge: ['s', 's'], topAppendage: ['o', 'o'] }), { outfit: { head: 'flower', neck: 'scarf' } }],
+  ],
+  random: Array.from({ length: 24 }, (_, i) => [`aleatorio ${i}`, sanitizeGenotype(randomGenotype(rnd))]),
+};
+
+function Cell([name, g, o = {}], i) {
+  return (
+    <div className="cell" key={name + i}>
+      <Creature genotype={g} seed={`s${i}${name}`} motion={motion} {...o} />
+      <div>{name}</div>
+    </div>
+  );
+}
+
+const shown = section === 'all' ? Object.keys(groups) : section.split(',');
 createRoot(document.getElementById('root')).render(
-  <div className="grid">{items.map(([name, g, o], i) => (
-    <div className="cell" key={i}><Creature genotype={g} seed={'s' + i} motion={motion} {...o} /><div>{name}</div></div>
-  ))}</div>
-);
-import { Egg } from '../src/art/Egg.jsx';
-const eggRoot = document.createElement('div');
-document.body.appendChild(eggRoot);
-createRoot(eggRoot).render(
-  <div className="grid">{['S','p','j','f','m'].map((s, i) => (
-    <div className="cell" key={s}><Egg genotype={sanitizeGenotype({ ...randomGenotype(rnd), surfaceType: [s, s] })} seed={'e' + i} progress={i * 0.3} motion="none" /><div>egg {s}</div></div>
-  ))}</div>
+  <>
+    {shown.map((k) => <div key={k} className="grid">{groups[k].map(Cell)}</div>)}
+    {section === 'all' && (
+      <div className="grid">
+        {['S', 'p', 'j', 'f', 'm'].map((s, i) => (
+          <div className="cell" key={s}><Egg genotype={sanitizeGenotype({ ...randomGenotype(rnd), surfaceType: [s, s] })} seed={`e${i}`} progress={i * 0.3} motion="none" /><div>huevo {s}</div></div>
+        ))}
+      </div>
+    )}
+  </>,
 );

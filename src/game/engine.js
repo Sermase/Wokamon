@@ -6,6 +6,9 @@ import {
 } from './creatures.js';
 import { addDays, careDayKey, daysBetween } from './time.js';
 import { codeFingerprint, decodeCode, encodeCode } from './codes.js';
+import { accessoryById, sanitizeOutfit } from './accessories.js';
+
+export const STREAK_REWARD = { every: 7, crystals: 10 };
 
 const fmt = (n) => Math.round(n).toLocaleString('es-ES');
 const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
@@ -21,6 +24,9 @@ export function newGameState(now = new Date()) {
       stepsPendingCrystal: 0,
       totalSteps: 0,
       firstWalkDone: false,
+      streak: 0,
+      bestStreak: 0,
+      owned: [],
       lastCareKey: careDayKey(now),
       stepHistory: [],
       createdAt: now.toISOString(),
@@ -453,6 +459,38 @@ export const actions = {
     return events;
   },
 
+  buyAccessory(state, { item }, { now }) {
+    const acc = accessoryById(item);
+    if (!acc || state.player.owned.includes(acc.id)) return [];
+    if (state.player.crystals < acc.price) return fail(`Te faltan ${acc.price - state.player.crystals} cristales para ${acc.name.toLowerCase()}.`);
+    state.player.crystals -= acc.price;
+    state.player.owned.push(acc.id);
+    addLog(state, 'shop', `Has comprado: ${acc.name.toLowerCase()} (${acc.price} cristales).`, now);
+    return [{ type: 'bought', item: acc.id, name: acc.name }];
+  },
+
+  wear(state, { id, item, slot }) {
+    const wok = findWok(state, id);
+    if (!wok || wok.dead) return [];
+    wok.outfit = sanitizeOutfit(wok.outfit);
+    if (!item) {
+      if (slot) delete wok.outfit[slot];
+      return [];
+    }
+    const acc = accessoryById(item);
+    if (!acc || !state.player.owned.includes(acc.id)) return fail('Primero tienes que comprarlo.');
+    if (wok.outfit[acc.slot] === acc.id) {
+      delete wok.outfit[acc.slot];
+      return [];
+    }
+    // Un accesorio solo puede llevarlo un Wokamon a la vez.
+    for (const other of state.wokamons) {
+      if (other.id !== wok.id && other.outfit?.[acc.slot] === acc.id) delete other.outfit[acc.slot];
+    }
+    wok.outfit[acc.slot] = acc.id;
+    return [{ type: 'wore', id: wok.id }];
+  },
+
   devSteps(state, { steps }, ctx) {
     return actions.addSteps(state, { steps }, ctx);
   },
@@ -487,10 +525,13 @@ function settleOneDay(state, dayKey, report, now, events) {
   const p = state.player;
   const living = aliveWoks(state);
 
+  // La ración del día se fija al empezar el cierre: si crece mientras come, no se le exige la de adulto.
+  const needs = new Map(living.map((w) => [w.id, dailyNeedOf(w)]));
+
   // 1) Lo que sobre de energía se reparte solo entre quienes no completaron su ración.
-  const byHunger = [...living].sort((a, b) => a.fedToday / (dailyNeedOf(a) || 1) - b.fedToday / (dailyNeedOf(b) || 1));
+  const byHunger = [...living].sort((a, b) => a.fedToday / (needs.get(a.id) || 1) - b.fedToday / (needs.get(b.id) || 1));
   for (const wok of byHunger) {
-    const missing = dailyNeedOf(wok) - wok.fedToday;
+    const missing = needs.get(wok.id) - wok.fedToday;
     const give = Math.min(missing, p.energy);
     if (give > 0) {
       p.energy -= give;
@@ -500,7 +541,7 @@ function settleOneDay(state, dayKey, report, now, events) {
 
   // 2) Efectos del día según la ración cubierta.
   for (const wok of living) {
-    const need = dailyNeedOf(wok);
+    const need = needs.get(wok.id);
     const cover = need ? Math.min(1, wok.fedToday / need) : 1;
     const missing = 1 - cover;
     const ph = getPhenotype(wok.genotype);
@@ -508,6 +549,7 @@ function settleOneDay(state, dayKey, report, now, events) {
     const entry = report.entries[wok.id] || (report.entries[wok.id] = {
       id: wok.id, name: wok.name, cover, hungryDays: 0, levelBefore: wok.level, died: false, statusBefore: statusOf(wok),
     });
+    entry.lastCover = cover;
 
     if (cover >= 1) {
       wok.deficitDays = 0;
@@ -566,8 +608,25 @@ function settleOneDay(state, dayKey, report, now, events) {
     }
   }
 
-  // 4) Cierre del día.
-  p.stepHistory.push({ date: dayKey, steps: p.stepsToday, used: p.usedToday });
+  // 4) Racha: días seguidos en los que todos comieron su ración.
+  if (living.length) {
+    const allFed = living.every((w) => report.entries[w.id] && !report.entries[w.id].died && report.entries[w.id].lastCover >= 1);
+    if (allFed) {
+      p.streak += 1;
+      p.bestStreak = Math.max(p.bestStreak, p.streak);
+      if (p.streak % STREAK_REWARD.every === 0) {
+        p.crystals += STREAK_REWARD.crystals;
+        report.streakReward = (report.streakReward || 0) + STREAK_REWARD.crystals;
+        addLog(state, 'crystal', `¡Racha de ${p.streak} días cuidando bien! +${STREAK_REWARD.crystals} cristales.`, now);
+      }
+    } else {
+      p.streak = 0;
+    }
+  }
+  report.streak = p.streak;
+
+  // 5) Cierre del día.
+  p.stepHistory.push({ date: dayKey, steps: p.stepsToday, used: p.usedToday, ok: living.length > 0 && p.streak > 0 });
   if (p.stepHistory.length > 60) p.stepHistory.splice(0, p.stepHistory.length - 60);
   if (p.stepsToday > 0 || living.length) {
     addLog(state, 'walk', `Día cerrado: ${fmt(p.stepsToday)} pasos caminados, ${fmt(p.usedToday)} usados en cuidados.`, now);
@@ -583,13 +642,14 @@ export function reconcile(state, { now = new Date() } = {}) {
   const s = state;
   s.version = 2;
   s.player = {
-    energy: 0, crystals: 5, stepsToday: 0, usedToday: 0, stepsPendingCrystal: 0, totalSteps: 0,
+    energy: 0, crystals: 5, stepsToday: 0, usedToday: 0, stepsPendingCrystal: 0, totalSteps: 0, streak: 0, bestStreak: 0,
     firstWalkDone: false, lastCareKey: careDayKey(now), stepHistory: [], createdAt: now.toISOString(),
     ...(s.player || {}),
   };
-  for (const key of ['energy', 'crystals', 'stepsToday', 'usedToday', 'stepsPendingCrystal', 'totalSteps']) {
+  for (const key of ['energy', 'crystals', 'stepsToday', 'usedToday', 'stepsPendingCrystal', 'totalSteps', 'streak', 'bestStreak']) {
     s.player[key] = Math.max(0, Number(s.player[key]) || 0);
   }
+  s.player.owned = [...new Set((s.player.owned || []).filter((id) => accessoryById(id)))];
   s.wokamons = (s.wokamons || []).map((w) => {
     const genotype = sanitizeGenotype(w.genotype);
     const maxVit = maxVitalityOf(genotype);
@@ -611,6 +671,7 @@ export function reconcile(state, { now = new Date() } = {}) {
       generation: Math.max(1, num(w.generation, 1)),
       favorite: Boolean(w.favorite),
       dead: Boolean(w.dead),
+      outfit: sanitizeOutfit(w.outfit),
       genotype,
     };
   });

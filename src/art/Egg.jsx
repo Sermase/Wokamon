@@ -1,5 +1,5 @@
 import { useId, useMemo } from 'react';
-import { getColors, getPhenotype } from '../game/genetics.js';
+import { getColors, getPhenotype, sanitizeGenotype } from '../game/genetics.js';
 import { eggPalette, seeded } from './palette.js';
 import './creature.css';
 
@@ -22,8 +22,8 @@ export function Egg({ genotype, seed = 'egg', progress = 0, cracks, state = 'idl
   const { pal, surface, spots } = useMemo(() => {
     const rand = seeded(seed);
     return {
-      pal: eggPalette(getColors(genotype)),
-      surface: getPhenotype(genotype).surfaceType,
+      pal: eggPalette(getColors(sanitizeGenotype(genotype))),
+      surface: getPhenotype(sanitizeGenotype(genotype)).surfaceType,
       spots: Array.from({ length: 7 }, () => [60 + rand() * 80, 66 + rand() * 100, 4 + rand() * 8]),
     };
   }, [genotype, seed]);

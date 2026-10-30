@@ -38,6 +38,12 @@ export default function DayReport({ game, report, onClose }) {
             );
           })}
         </div>
+        {report.streak > 0 && (
+          <p style={{ fontWeight: 700 }}>
+            Racha de {report.streak} {report.streak === 1 ? 'día' : 'días'} con todos bien comidos.
+            {report.streakReward ? ` Premio: +${report.streakReward} cristales.` : ''}
+          </p>
+        )}
         {report.eggsReady.length > 0 && <p style={{ fontWeight: 700 }}>Un cuidador ha terminado de incubar un huevo: ya puedes abrirlo.</p>}
         {anyHungry && <p className="muted small">La comida que no les des tú se reparte sola a las 5:00 con la energía que te sobre. Camina un poco más hoy.</p>}
         <button className="btn sun block" onClick={onClose}>Vamos allá</button>
