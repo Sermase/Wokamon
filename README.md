@@ -12,6 +12,9 @@ Juego de móvil en el que tus pasos de verdad alimentan, hacen crecer y cruzan a
 - Los **huevos** se incuban caminando (7500 pasos, la mitad con un adulto de cuidador). Se abren con tres toques.
 - **Laboratorio**: edita alelos del huevo con cristales, solo con rasgos que ya hayas descubierto en la **Wokadex**.
 - Códigos `WOKA-…` para regalar Wokamon/huevos o compartir uno para cruzar. Se aceptan también los códigos de la versión 1.
+- **Rasgos**: 17 genes (silueta, orejas de gato/conejo/oso, cuernos, cuerno mágico, cresta, antenas, colas, **alas** —raras, solo en homocigosis—, **marcas** como manchas, rayas, antifaz, calcetines o parche…). 75 rasgos que descubrir.
+- **Racha**: cada día en que todos comen su ración suma uno; cada 7 días seguidos, +10 cristales.
+- **Armario**: 8 accesorios (flor, lazo, gorros, bufanda, gafas de sol, chistera, corona) que se compran con cristales.
 
 ## Desarrollo
 
@@ -24,12 +27,15 @@ npm run build:demo   # dist-demo/index.html: un solo archivo, modo invitado y he
 npm run android      # build + cap sync + abre Android Studio
 ```
 
+- `/dev/gallery.html` muestra todas las especies, estados y accesorios (`?motion=full` para verlos animados).
+- `/dev/icon.html?mode=full|fg|mask|splash` es el arte de los iconos (se captura a 1024 px).
+
 ## Estructura
 
 ```
 src/
   game/       reglas puras: genética, criaturas, motor de acciones, migración v1 → v2 (con tests)
-  art/        Wokamon, huevos y escenarios en SVG procedural + animaciones CSS
+  art/        Wokamon, huevos, accesorios y escenarios en SVG procedural + animaciones CSS
   data/       estado global, guardado (local o Firestore con debounce) y sesión
   steps/      contador de pasos: sensor nativo de Android o acelerómetro del navegador
   screens/    Inicio, Criadero, Cría, Diario y hojas (ficha, laboratorio, eclosión, ajustes…)

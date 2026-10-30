@@ -62,7 +62,7 @@ export default function Hatch({ game, eggId, onDone }) {
           <form className="moment-card" onSubmit={welcome}>
             <div className="moment-art">
               <Backdrop hue={getColors(egg.genotype).primary.h} />
-              <Creature genotype={egg.genotype} seed={egg.id} stage="Niño" reaction={{ type: 'level', key: 1 }} />
+              <Creature genotype={egg.genotype} seed={egg.id} stage="Niño" age={0} reaction={{ type: 'level', key: 1 }} />
             </div>
             <h2>¡Ha nacido!</h2>
             <p className="muted">Generación {egg.generation}{egg.parents?.a ? `, hijo de ${egg.parents.a.name} y ${egg.parents.b?.name}` : ''}.</p>
